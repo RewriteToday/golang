@@ -29,5 +29,6 @@ changelog:
       - '^chore:'
 
 release:
+  name_template: "{{.Tag}}"
   draft: false
   prerelease: auto
