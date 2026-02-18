@@ -1,0 +1,33 @@
+version: 2
+
+project_name: rewrite-go-sdk
+
+before:
+  hooks:
+    - go mod tidy
+    - go test ./...
+
+builds:
+  - skip: true
+
+source:
+  enabled: true
+
+checksum:
+  name_template: checksums.txt
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  use: git
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+
+release:
+  draft: false
+  prerelease: auto
