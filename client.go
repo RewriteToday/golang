@@ -44,21 +44,21 @@ type RewriteOptions struct {
 //   - *RewriteOptions
 func New(options any) (*Client, error) {
 	resolved, err := resolveOptions(options)
-	
+
 	if err != nil {
 		return nil, err
 	}
 
 	restOptions := rest.Options{}
-	
+
 	if resolved.Rest != nil {
 		restOptions = *resolved.Rest
 	}
-	
+
 	restOptions.Auth = resolved.Secret
 
 	restClient, err := rest.New(restOptions)
-	
+
 	if err != nil {
 		return nil, err
 	}
