@@ -4,7 +4,7 @@ import "time"
 
 // Options configures the low-level REST client.
 type Options struct {
-	// BaseURL is the API origin. When empty, https://api.userewrite.me is used.
+	// BaseURL is the API origin. When empty, https://api.rewritetoday.com is used.
 	BaseURL string
 	// Auth is the Rewrite API secret used in the Bearer token.
 	Auth string

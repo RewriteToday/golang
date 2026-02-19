@@ -35,11 +35,13 @@ import (
 
 func main() {
 	rewriteClient, err := rewrite.New("rw_live_xxx")
+	
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	project, err := rewriteClient.Projects.Get(context.Background(), "123456789012345678")
+	
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -94,6 +96,7 @@ func buildClient() (*rewrite.Client, error) {
 project, err := rewriteClient.Projects.Create(context.Background(), rewrite.RESTPostCreateProjectBody{
 	Name: "AbacatePay Notifications",
 })
+
 if err != nil {
 	log.Fatal(err)
 }
@@ -122,11 +125,13 @@ created, err := rewriteClient.Templates.Create(context.Background(), rewrite.Cre
 		},
 	},
 })
+
 if err != nil {
 	log.Fatal(err)
 }
 
 templates, err := rewriteClient.Templates.List(context.Background(), projectID, &rewrite.RESTGetListTemplatesQueryParams{Limit: 20})
+
 if err != nil {
 	log.Fatal(err)
 }
@@ -152,6 +157,7 @@ hook, err := rewriteClient.Webhooks.Create(context.Background(), rewrite.CreateW
 		rewrite.WebhookEventTypeSMSFailed,
 	},
 })
+
 if err != nil {
 	log.Fatal(err)
 }
@@ -162,11 +168,13 @@ _, err = rewriteClient.Webhooks.Update(context.Background(), string(hook.Data.ID
 		Status: rewrite.WebhookStatusInactive,
 	},
 })
+
 if err != nil {
 	log.Fatal(err)
 }
 
 hooks, err := rewriteClient.Webhooks.List(context.Background(), projectID, &rewrite.RESTGetListWebhooksQueryParams{Limit: 10})
+
 if err != nil {
 	log.Fatal(err)
 }
@@ -193,6 +201,7 @@ key, err := rewriteClient.APIKeys.Create(context.Background(), rewrite.CreateAPI
 		},
 	},
 })
+
 if err != nil {
 	log.Fatal(err)
 }
@@ -212,6 +221,7 @@ Requests run through the SDK REST client. HTTP failures can throw `HTTPError`.
 _, err := rewriteClient.Projects.Get(context.Background(), "invalid_id")
 if err != nil {
 	var httpErr *rewrite.HTTPError
+	
 	if errors.As(err, &httpErr) {
 		fmt.Println("HTTP Error:", httpErr.Status, httpErr.Method, httpErr.URL)
 	}
