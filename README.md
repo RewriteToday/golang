@@ -34,19 +34,23 @@ import (
 )
 
 func main() {
-	rewriteClient, err := rewrite.New("rw_live_xxx")
-	
+	client, err := rewrite.New("rw_abc")
+
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	project, err := rewriteClient.Projects.Get(context.Background(), "123456789012345678")
-	
+	hooks, err := client.Webhooks.List(
+		context.Background(),
+		"123456789012345678",
+		&rewrite.RESTGetListWebhooksQueryParams{Limit: 10},
+	)
+
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("%+v\n", project)
+	fmt.Printf("%+v\n", hooks)
 }
 ```
 
@@ -69,7 +73,7 @@ import (
 
 func buildClient() (*rewrite.Client, error) {
 	return rewrite.New(rewrite.RewriteOptions{
-		Secret: "rw_live_xxx",
+		Secret: "rw_abc",
 		Rest: &rewrite.RESTOptions{
 			Timeout: 10 * time.Second,
 			Headers: map[string]string{
@@ -88,40 +92,21 @@ func buildClient() (*rewrite.Client, error) {
 
 <div align="center">
 
-### Projects
-
-</div>
-
-```go
-project, err := rewriteClient.Projects.Create(context.Background(), rewrite.RESTPostCreateProjectBody{
-	Name: "AbacatePay Notifications",
-})
-
-if err != nil {
-	log.Fatal(err)
-}
-
-fmt.Printf("%+v\n", project)
-```
-
-<div align="center">
-
 ### Templates
 
 </div>
 
 ```go
-projectID := "123456789012345678"
-customerFallback := "customer"
-companyFallback := "Rewrite"
+projectId := "123456789012345678"
 
-created, err := rewriteClient.Templates.Create(context.Background(), rewrite.CreateTemplateOptions{
-	Project: projectID,
+created, err := client.Templates.Create(context.Background(), rewrite.CreateTemplateOptions{
+	Project: projectId,
 	RESTPostCreateTemplateBody: rewrite.RESTPostCreateTemplateBody{
-		Name: "welcome_sms",
+		Name:    "welcome_sms",
+		Content: "Hi {{name}}, welcome to {{company}}.",
 		Variables: []rewrite.APITemplateVariable{
-			{Name: "name", Fallback: &customerFallback},
-			{Name: "company", Fallback: &companyFallback},
+			{Name: "name", Fallback: "customer"},
+			{Name: "company", Fallback: "Rewrite"},
 		},
 	},
 })
@@ -130,7 +115,7 @@ if err != nil {
 	log.Fatal(err)
 }
 
-templates, err := rewriteClient.Templates.List(context.Background(), projectID, &rewrite.RESTGetListTemplatesQueryParams{Limit: 20})
+templates, err := client.Templates.List(context.Background(), projectId, &rewrite.RESTGetListTemplatesQueryParams{Limit: 20})
 
 if err != nil {
 	log.Fatal(err)
@@ -146,12 +131,12 @@ fmt.Printf("created=%+v templates=%+v\n", created, templates)
 </div>
 
 ```go
-projectID := "123456789012345678"
+projectId := "123456789012345678"
 
-hook, err := rewriteClient.Webhooks.Create(context.Background(), rewrite.CreateWebhookOptions{
-	Project:  projectID,
+hook, err := client.Webhooks.Create(context.Background(), rewrite.CreateWebhookOptions{
+	Project:  projectId,
 	Name:     "delivery-events",
-	Endpoint: "https://example.com/rewrite/webhooks",
+	Endpoint: "https://example.com/webhooks/rewrite",
 	Events: []rewrite.WebhookEventType{
 		rewrite.WebhookEventTypeSMSDelivered,
 		rewrite.WebhookEventTypeSMSFailed,
@@ -162,8 +147,8 @@ if err != nil {
 	log.Fatal(err)
 }
 
-_, err = rewriteClient.Webhooks.Update(context.Background(), string(hook.Data.ID), rewrite.UpdateWebhookOptions{
-	Project: projectID,
+_, err = client.Webhooks.Update(context.Background(), string(hook.Data.ID), rewrite.UpdateWebhookOptions{
+	Project: projectId,
 	RESTPatchUpdateWebhookBody: rewrite.RESTPatchUpdateWebhookBody{
 		Status: rewrite.WebhookStatusInactive,
 	},
@@ -173,7 +158,7 @@ if err != nil {
 	log.Fatal(err)
 }
 
-hooks, err := rewriteClient.Webhooks.List(context.Background(), projectID, &rewrite.RESTGetListWebhooksQueryParams{Limit: 10})
+hooks, err := client.Webhooks.List(context.Background(), projectId, &rewrite.RESTGetListWebhooksQueryParams{Limit: 10})
 
 if err != nil {
 	log.Fatal(err)
@@ -189,10 +174,10 @@ fmt.Printf("%+v\n", hooks)
 </div>
 
 ```go
-projectID := "123456789012345678"
+projectId := "123456789012345678"
 
-key, err := rewriteClient.APIKeys.Create(context.Background(), rewrite.CreateAPIKeyOptions{
-	Project: projectID,
+key, err := client.APIKeys.Create(context.Background(), rewrite.CreateAPIKeyOptions{
+	Project: projectId,
 	RESTPostCreateAPIKeyBody: rewrite.RESTPostCreateAPIKeyBody{
 		Name: "backend-prod",
 		Scopes: []rewrite.APIKeyScope{
@@ -213,15 +198,16 @@ fmt.Printf("%+v\n", key)
 
 ## Error Handling
 
-Requests run through the SDK REST client. HTTP failures can throw `HTTPError`.
+Requests run through the SDK REST client. HTTP failures can return `HTTPError`.
 
 </div>
 
 ```go
-_, err := rewriteClient.Projects.Get(context.Background(), "invalid_id")
+_, err := client.APIKeys.List(context.Background(), "invalid_id", nil)
+
 if err != nil {
 	var httpErr *rewrite.HTTPError
-	
+
 	if errors.As(err, &httpErr) {
 		fmt.Println("HTTP Error:", httpErr.Status, httpErr.Method, httpErr.URL)
 	}
