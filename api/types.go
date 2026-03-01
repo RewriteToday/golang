@@ -3,12 +3,26 @@ package api
 // Snowflake is the unique identifier format used by Rewrite resources.
 type Snowflake string
 
+// Cursor describes pagination state for list responses.
+type Cursor struct {
+	Persist bool       `json:"persist"`
+	Next    *Snowflake `json:"next,omitempty"`
+}
+
 // APIAPIKey represents an API key entity returned by the Rewrite API.
 type APIAPIKey struct {
 	ID        Snowflake     `json:"id"`
 	Name      string        `json:"name"`
-	ProjectID Snowflake     `json:"projectId"`
+	Prefix    string        `json:"prefix"`
 	Scopes    []APIKeyScope `json:"scopes"`
+	CreatedAt string        `json:"createdAt"`
+}
+
+// APICreatedAPIKey represents the one-time response payload from API key creation.
+type APICreatedAPIKey struct {
+	ID        Snowflake `json:"id"`
+	Key       string    `json:"key"`
+	CreatedAt string    `json:"createdAt"`
 }
 
 // APIKeyScope enumerates the supported API key permissions.
@@ -22,49 +36,53 @@ const (
 	// APIKeyScopeWriteProject allows updating project details.
 	APIKeyScopeWriteProject APIKeyScope = "project:write"
 	// APIKeyScopeReadAPIKeys allows listing API keys.
-	APIKeyScopeReadAPIKeys APIKeyScope = "project:api_key:read"
+	APIKeyScopeReadAPIKeys APIKeyScope = "project:api_keys:read"
 	// APIKeyScopeWriteTemplate allows creating and updating templates.
-	APIKeyScopeWriteTemplate APIKeyScope = "project:template:write"
+	APIKeyScopeWriteTemplate APIKeyScope = "project:templates:write"
 	// APIKeyScopeReadTemplates allows listing and reading templates.
-	APIKeyScopeReadTemplates APIKeyScope = "project:template:read"
+	APIKeyScopeReadTemplates APIKeyScope = "project:templates:read"
 	// APIKeyScopeReadPayments allows reading payment information.
-	APIKeyScopeReadPayments APIKeyScope = "project:payment:read"
+	APIKeyScopeReadPayments APIKeyScope = "projects:payments:read"
 	// APIKeyScopeReadWebhooks allows listing and reading webhooks.
-	APIKeyScopeReadWebhooks APIKeyScope = "project:webhook:read"
+	APIKeyScopeReadWebhooks APIKeyScope = "projects:webhooks:read"
 	// APIKeyScopeWriteWebhooks allows creating and updating webhooks.
-	APIKeyScopeWriteWebhooks APIKeyScope = "project:webhook:write"
+	APIKeyScopeWriteWebhooks APIKeyScope = "projects:webhooks:write"
 )
-
-// APIProject represents a Rewrite project.
-type APIProject struct {
-	ID      Snowflake `json:"id"`
-	Name    string    `json:"name"`
-	OwnerID Snowflake `json:"ownerId"`
-	Icon    *string   `json:"icon,omitempty"`
-}
 
 // APITemplate represents a message template.
 type APITemplate struct {
 	ID        Snowflake             `json:"id"`
 	Name      string                `json:"name"`
-	ProjectID Snowflake             `json:"projectId"`
+	Content   *string               `json:"content"`
 	Variables []APITemplateVariable `json:"variables"`
+	CreatedAt string                `json:"createdAt"`
+}
+
+// APICreatedTemplate represents the create-template response payload.
+type APICreatedTemplate struct {
+	ID        Snowflake `json:"id"`
+	CreatedAt string    `json:"createdAt"`
 }
 
 // APITemplateVariable represents a named variable in a template.
 type APITemplateVariable struct {
-	Name     string  `json:"name"`
-	Fallback *string `json:"fallback,omitempty"`
+	Name     string `json:"name"`
+	Fallback string `json:"fallback"`
 }
 
 // APIWebhook represents a webhook endpoint configuration.
 type APIWebhook struct {
 	ID        Snowflake          `json:"id"`
-	Name      string             `json:"name"`
+	Name      *string            `json:"name"`
 	Endpoint  string             `json:"endpoint"`
 	Events    []WebhookEventType `json:"events"`
 	Status    WebhookStatus      `json:"status"`
-	ProjectID Snowflake          `json:"projectId"`
+	CreatedAt string             `json:"createdAt"`
+}
+
+// APICreatedWebhook represents the create-webhook response payload.
+type APICreatedWebhook struct {
+	ID Snowflake `json:"id"`
 }
 
 // WebhookEventType enumerates webhook events exposed by Rewrite.
@@ -73,8 +91,6 @@ type WebhookEventType string
 const (
 	// WebhookEventTypeSMSQueued fires when an SMS enters the queue.
 	WebhookEventTypeSMSQueued WebhookEventType = "sms.queued"
-	// WebhookEventTypeSMSSent fires when an SMS is accepted for sending.
-	WebhookEventTypeSMSSent WebhookEventType = "sms.sent"
 	// WebhookEventTypeSMSDelivered fires when an SMS is delivered.
 	WebhookEventTypeSMSDelivered WebhookEventType = "sms.delivered"
 	// WebhookEventTypeSMSScheduled fires when an SMS is scheduled.
@@ -111,7 +127,8 @@ type APIValidationError struct {
 // APIResponse is the standard Rewrite API response envelope.
 type APIResponse[T any] struct {
 	OK      bool                `json:"ok"`
-	Data    T                   `json:"data,omitempty"`
+	Data    T                   `json:"data"`
+	Cursor  *Cursor             `json:"cursor,omitempty"`
 	Code    string              `json:"code,omitempty"`
 	Message string              `json:"message,omitempty"`
 	Errors  *APIValidationError `json:"errors,omitempty"`
@@ -121,11 +138,11 @@ type APIResponse[T any] struct {
 type RESTGetWebhookData = APIResponse[APIWebhook]
 
 // RESTPostCreateWebhookData corresponds to POST /projects/:id/webhooks.
-type RESTPostCreateWebhookData = APIResponse[APIWebhook]
+type RESTPostCreateWebhookData = APIResponse[APICreatedWebhook]
 
 // RESTPostCreateWebhookBody is the request body for webhook creation.
 type RESTPostCreateWebhookBody struct {
-	Name     string             `json:"name"`
+	Name     string             `json:"name,omitempty"`
 	Endpoint string             `json:"endpoint"`
 	Events   []WebhookEventType `json:"events"`
 }
@@ -134,11 +151,11 @@ type RESTPostCreateWebhookBody struct {
 type RESTDeleteWebhookData = APIResponse[any]
 
 // RESTPatchUpdateWebhookData corresponds to PATCH /projects/:id/webhooks/:webhookId.
-type RESTPatchUpdateWebhookData = APIResponse[APIWebhook]
+type RESTPatchUpdateWebhookData = APIResponse[any]
 
 // RESTPatchUpdateWebhookBody is the request body for webhook updates.
 type RESTPatchUpdateWebhookBody struct {
-	Name     string             `json:"name,omitempty"`
+	Name     *string            `json:"name,omitempty"`
 	Endpoint string             `json:"endpoint,omitempty"`
 	Events   []WebhookEventType `json:"events,omitempty"`
 	Status   WebhookStatus      `json:"status,omitempty"`
@@ -157,27 +174,28 @@ type RESTGetListTemplatesData = APIResponse[[]APITemplate]
 type RESTGetListTemplatesQueryParams = RESTCursorOptions
 
 // RESTPostCreateTemplateData corresponds to POST /projects/:id/templates.
-type RESTPostCreateTemplateData = APIResponse[APITemplate]
+type RESTPostCreateTemplateData = APIResponse[APICreatedTemplate]
 
 // RESTPostCreateTemplateBody is the request body for template creation.
 type RESTPostCreateTemplateBody struct {
 	Name      string                `json:"name"`
+	Content   string                `json:"content"`
 	Variables []APITemplateVariable `json:"variables"`
 }
 
 // RESTPatchUpdateTemplateData corresponds to PATCH /projects/:id/templates/:templateId.
-type RESTPatchUpdateTemplateData = APIResponse[APITemplate]
+type RESTPatchUpdateTemplateData = APIResponse[any]
 
 // RESTPatchUpdateTemplateBody is the request body for template updates.
 type RESTPatchUpdateTemplateBody struct {
-	Name      string                `json:"name"`
-	Variables []APITemplateVariable `json:"variables"`
+	Content   string                `json:"content,omitempty"`
+	Variables []APITemplateVariable `json:"variables,omitempty"`
 }
 
 // RESTDeleteTemplateData corresponds to DELETE /projects/:id/templates/:templateId.
 type RESTDeleteTemplateData = APIResponse[any]
 
-// RESTGetTemplateData corresponds to GET /projects/:id/templates/:templateId.
+// RESTGetTemplateData corresponds to GET /projects/:id/templates/:identifier.
 type RESTGetTemplateData = APIResponse[APITemplate]
 
 // RESTGetListAPIKeysData corresponds to GET /projects/:id/api-keys.
@@ -187,44 +205,13 @@ type RESTGetListAPIKeysData = APIResponse[[]APIAPIKey]
 type RESTGetListAPIKeysQueryParams = RESTCursorOptions
 
 // RESTPostCreateAPIKeyData corresponds to POST /projects/:id/api-keys.
-type RESTPostCreateAPIKeyData = APIResponse[APIAPIKey]
+type RESTPostCreateAPIKeyData = APIResponse[APICreatedAPIKey]
 
 // RESTPostCreateAPIKeyBody is the request body for API key creation.
 type RESTPostCreateAPIKeyBody struct {
 	Name   string        `json:"name"`
-	Scopes []APIKeyScope `json:"scopes"`
+	Scopes []APIKeyScope `json:"scopes,omitempty"`
 }
 
 // RESTDeleteAPIKeyData corresponds to DELETE /projects/:id/api-keys/:apiKeyId.
 type RESTDeleteAPIKeyData = APIResponse[any]
-
-// RESTPostCreateProjectData corresponds to POST /projects.
-type RESTPostCreateProjectData = APIResponse[APIProject]
-
-// RESTPostCreateProjectBody is the request body for project creation.
-type RESTPostCreateProjectBody struct {
-	Name string `json:"name"`
-}
-
-// RESTPatchUpdateProjectData corresponds to PATCH /projects/:id.
-type RESTPatchUpdateProjectData = APIResponse[APIProject]
-
-// Null serializes as JSON null.
-type Null struct{}
-
-// MarshalJSON implements json.Marshaler.
-func (Null) MarshalJSON() ([]byte, error) {
-	return []byte("null"), nil
-}
-
-// RESTPatchUpdateProjectBody is the request body for project updates.
-type RESTPatchUpdateProjectBody struct {
-	Name string `json:"name,omitempty"`
-	Icon *Null  `json:"icon,omitempty"`
-}
-
-// RESTDeleteProjectData corresponds to DELETE /projects/:id.
-type RESTDeleteProjectData = APIResponse[any]
-
-// RESTGetProjectData corresponds to GET /projects/:id.
-type RESTGetProjectData = APIResponse[APIProject]

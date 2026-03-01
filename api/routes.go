@@ -17,7 +17,6 @@ var Routes = RouteRegistry{
 	Webhooks:  WebhookRoutes{},
 	Templates: TemplateRoutes{},
 	APIKeys:   APIKeyRoutes{},
-	Projects:  ProjectRoutes{},
 }
 
 // RouteRegistry groups route builders by resource.
@@ -25,7 +24,6 @@ type RouteRegistry struct {
 	Webhooks  WebhookRoutes
 	Templates TemplateRoutes
 	APIKeys   APIKeyRoutes
-	Projects  ProjectRoutes
 }
 
 // WebhookRoutes builds webhook endpoints.
@@ -36,9 +34,6 @@ type TemplateRoutes struct{}
 
 // APIKeyRoutes builds API key endpoints.
 type APIKeyRoutes struct{}
-
-// ProjectRoutes builds project endpoints.
-type ProjectRoutes struct{}
 
 // List returns GET /projects/:id/webhooks with cursor query.
 func (WebhookRoutes) List(id string, options *RESTCursorOptions) string {
@@ -103,26 +98,6 @@ func (APIKeyRoutes) Create(id string) string {
 // Delete returns DELETE /projects/:id/api-keys/:apiKeyId.
 func (APIKeyRoutes) Delete(id, apiKeyID string) string {
 	return fmt.Sprintf("/projects/%s/api-keys/%s", id, apiKeyID)
-}
-
-// Create returns POST /projects.
-func (ProjectRoutes) Create() string {
-	return "/projects"
-}
-
-// Update returns PATCH /projects/:id.
-func (ProjectRoutes) Update(id string) string {
-	return fmt.Sprintf("/projects/%s", id)
-}
-
-// Delete returns DELETE /projects/:id.
-func (ProjectRoutes) Delete(id string) string {
-	return fmt.Sprintf("/projects/%s", id)
-}
-
-// Get returns GET /projects/:id.
-func (ProjectRoutes) Get(id string) string {
-	return fmt.Sprintf("/projects/%s", id)
 }
 
 func createCursorQuery(options *RESTCursorOptions) string {

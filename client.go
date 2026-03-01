@@ -17,10 +17,10 @@ type Client struct {
 
 	// APIKeys exposes API key operations.
 	APIKeys *resources.APIKeys
-	// Projects exposes project operations.
-	Projects *resources.Projects
+	
 	// Templates exposes template operations.
 	Templates *resources.Templates
+	
 	// Webhooks exposes webhook operations.
 	Webhooks *resources.Webhooks
 }
@@ -67,7 +67,6 @@ func New(options any) (*Client, error) {
 		Rest:      restClient,
 		secret:    resolved.Secret,
 		APIKeys:   &resources.APIKeys{Base: resources.Base{Rest: restClient}},
-		Projects:  &resources.Projects{Base: resources.Base{Rest: restClient}},
 		Templates: &resources.Templates{Base: resources.Base{Rest: restClient}},
 		Webhooks:  &resources.Webhooks{Base: resources.Base{Rest: restClient}},
 	}

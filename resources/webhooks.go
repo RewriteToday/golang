@@ -11,29 +11,29 @@ type Webhooks struct {
 	Base
 }
 
-// CreateWebhookOptions mirrors RESTPostCreateWebhookBody & { project: string } from the Node SDK.
+// CreateWebhookOptions carries webhook creation input plus the target project ID.
 type CreateWebhookOptions struct {
-	Project string `json:"project"`
+	Project string `json:"-"`
 	api.RESTPostCreateWebhookBody
 }
 
-// UpdateWebhookOptions mirrors RESTPatchUpdateWebhookBody & { project: string } from the Node SDK.
+// UpdateWebhookOptions carries webhook update input plus the target project ID.
 type UpdateWebhookOptions struct {
-	Project string `json:"project"`
+	Project string `json:"-"`
 	api.RESTPatchUpdateWebhookBody
 }
 
 // Create creates a webhook for a project.
 func (r *Webhooks) Create(ctx context.Context, options CreateWebhookOptions) (api.RESTPostCreateWebhookData, error) {
 	var out api.RESTPostCreateWebhookData
-	err := r.Rest.Post(ctx, api.Routes.Webhooks.Create(options.Project), options, &out, nil)
+	err := r.Rest.Post(ctx, api.Routes.Webhooks.Create(options.Project), options.RESTPostCreateWebhookBody, &out, nil)
 	return out, err
 }
 
 // Update updates a webhook by ID.
 func (r *Webhooks) Update(ctx context.Context, id string, options UpdateWebhookOptions) (api.RESTPatchUpdateWebhookData, error) {
 	var out api.RESTPatchUpdateWebhookData
-	err := r.Rest.Patch(ctx, api.Routes.Webhooks.Update(options.Project, id), options, &out, nil)
+	err := r.Rest.Patch(ctx, api.Routes.Webhooks.Update(options.Project, id), options.RESTPatchUpdateWebhookBody, &out, nil)
 	return out, err
 }
 

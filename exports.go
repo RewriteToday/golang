@@ -38,17 +38,19 @@ type (
 // API model aliases.
 type (
 	Snowflake           = api.Snowflake
+	Cursor              = api.Cursor
 	APIAPIKey           = api.APIAPIKey
-	APIProject          = api.APIProject
+	APICreatedAPIKey    = api.APICreatedAPIKey
 	APITemplate         = api.APITemplate
+	APICreatedTemplate  = api.APICreatedTemplate
 	APITemplateVariable = api.APITemplateVariable
 	APIWebhook          = api.APIWebhook
+	APICreatedWebhook   = api.APICreatedWebhook
 	APIValidationError  = api.APIValidationError
 	APIKeyScope         = api.APIKeyScope
 	WebhookEventType    = api.WebhookEventType
 	WebhookStatus       = api.WebhookStatus
 	RESTCursorOptions   = api.RESTCursorOptions
-	Null                = api.Null
 )
 
 // API response/body aliases.
@@ -74,12 +76,6 @@ type (
 	RESTPostCreateAPIKeyData        = api.RESTPostCreateAPIKeyData
 	RESTPostCreateAPIKeyBody        = api.RESTPostCreateAPIKeyBody
 	RESTDeleteAPIKeyData            = api.RESTDeleteAPIKeyData
-	RESTPostCreateProjectData       = api.RESTPostCreateProjectData
-	RESTPostCreateProjectBody       = api.RESTPostCreateProjectBody
-	RESTPatchUpdateProjectData      = api.RESTPatchUpdateProjectData
-	RESTPatchUpdateProjectBody      = api.RESTPatchUpdateProjectBody
-	RESTDeleteProjectData           = api.RESTDeleteProjectData
-	RESTGetProjectData              = api.RESTGetProjectData
 )
 
 // APIKey scope constants.
@@ -98,7 +94,6 @@ const (
 // Webhook event/status constants.
 const (
 	WebhookEventTypeSMSQueued    = api.WebhookEventTypeSMSQueued
-	WebhookEventTypeSMSSent      = api.WebhookEventTypeSMSSent
 	WebhookEventTypeSMSDelivered = api.WebhookEventTypeSMSDelivered
 	WebhookEventTypeSMSScheduled = api.WebhookEventTypeSMSScheduled
 	WebhookEventTypeSMSFailed    = api.WebhookEventTypeSMSFailed

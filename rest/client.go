@@ -128,17 +128,7 @@ func (c *Client) fetch(ctx context.Context, route string, out any, options Fetch
 		return nil
 	}
 
-	var envelope struct {
-		Data json.RawMessage `json:"data"`
-	}
-	if err := json.Unmarshal(response.Body(), &envelope); err != nil {
-		return err
-	}
-	if len(envelope.Data) == 0 {
-		return nil
-	}
-
-	if err := json.Unmarshal(envelope.Data, out); err != nil {
+	if err := json.Unmarshal(response.Body(), out); err != nil {
 		return err
 	}
 

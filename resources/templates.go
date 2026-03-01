@@ -11,29 +11,29 @@ type Templates struct {
 	Base
 }
 
-// CreateTemplateOptions mirrors RESTPostCreateTemplateBody & { project: string } from the Node SDK.
+// CreateTemplateOptions carries template creation input plus the target project ID.
 type CreateTemplateOptions struct {
-	Project string `json:"project"`
+	Project string `json:"-"`
 	api.RESTPostCreateTemplateBody
 }
 
-// UpdateTemplateOptions mirrors RESTPostCreateTemplateBody & { project: string } from the Node SDK.
+// UpdateTemplateOptions carries template update input plus the target project ID.
 type UpdateTemplateOptions struct {
-	Project string `json:"project"`
-	api.RESTPostCreateTemplateBody
+	Project string `json:"-"`
+	api.RESTPatchUpdateTemplateBody
 }
 
 // Create creates a template for a project.
 func (r *Templates) Create(ctx context.Context, options CreateTemplateOptions) (api.RESTPostCreateTemplateData, error) {
 	var out api.RESTPostCreateTemplateData
-	err := r.Rest.Post(ctx, api.Routes.Templates.Create(options.Project), options, &out, nil)
+	err := r.Rest.Post(ctx, api.Routes.Templates.Create(options.Project), options.RESTPostCreateTemplateBody, &out, nil)
 	return out, err
 }
 
 // Update updates a template by ID.
-func (r *Templates) Update(ctx context.Context, id string, options UpdateTemplateOptions) (api.RESTPostCreateTemplateData, error) {
-	var out api.RESTPostCreateTemplateData
-	err := r.Rest.Patch(ctx, api.Routes.Templates.Update(options.Project, id), options, &out, nil)
+func (r *Templates) Update(ctx context.Context, id string, options UpdateTemplateOptions) (api.RESTPatchUpdateTemplateData, error) {
+	var out api.RESTPatchUpdateTemplateData
+	err := r.Rest.Patch(ctx, api.Routes.Templates.Update(options.Project, id), options.RESTPatchUpdateTemplateBody, &out, nil)
 	return out, err
 }
 
@@ -49,9 +49,9 @@ func (r *Templates) List(ctx context.Context, project string, query *api.RESTGet
 	return out, err
 }
 
-// Get fetches a template by ID.
-func (r *Templates) Get(ctx context.Context, id, project string) (api.RESTGetTemplateData, error) {
+// Get fetches a template by ID or unique name.
+func (r *Templates) Get(ctx context.Context, identifier, project string) (api.RESTGetTemplateData, error) {
 	var out api.RESTGetTemplateData
-	err := r.Rest.Get(ctx, api.Routes.Templates.Get(project, id), &out, nil)
+	err := r.Rest.Get(ctx, api.Routes.Templates.Get(project, identifier), &out, nil)
 	return out, err
 }

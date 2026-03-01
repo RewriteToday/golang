@@ -10,15 +10,17 @@ import (
 	"time"
 )
 
-func TestNewFromOptionsAndProjectsGet(t *testing.T) {
+func TestNewFromOptionsAndAPIKeysList(t *testing.T) {
 	var authHeader string
 	var requestPath string
+	var requestQuery string
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader = r.Header.Get("Authorization")
 		requestPath = r.URL.Path
+		requestQuery = r.URL.RawQuery
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"data":{"ok":true,"data":{"id":"123","name":"Test","ownerId":"999"}}}`))
+		_, _ = w.Write([]byte(`{"ok":true,"data":[],"cursor":{"persist":false}}`))
 	}))
 	defer server.Close()
 
@@ -36,19 +38,25 @@ func TestNewFromOptionsAndProjectsGet(t *testing.T) {
 		t.Fatalf("unexpected constructor error: %v", err)
 	}
 
-	project, err := client.Projects.Get(context.Background(), "123")
+	apiKeys, err := client.APIKeys.List(context.Background(), "123", nil)
 	if err != nil {
-		t.Fatalf("unexpected get error: %v", err)
+		t.Fatalf("unexpected list error: %v", err)
 	}
 
 	if authHeader != "Bearer rw_test" {
 		t.Fatalf("unexpected auth header: %q", authHeader)
 	}
-	if requestPath != "/v1/projects/123" {
+	if requestPath != "/v1/projects/123/api-keys" {
 		t.Fatalf("unexpected path: %q", requestPath)
 	}
-	if !project.OK || project.Data.ID != "123" {
-		t.Fatalf("unexpected payload: %+v", project)
+	if requestQuery != "limit=15" {
+		t.Fatalf("unexpected query: %q", requestQuery)
+	}
+	if !apiKeys.OK || len(apiKeys.Data) != 0 {
+		t.Fatalf("unexpected payload: %+v", apiKeys)
+	}
+	if apiKeys.Cursor == nil || apiKeys.Cursor.Persist {
+		t.Fatalf("unexpected cursor: %+v", apiKeys.Cursor)
 	}
 }
 
@@ -66,7 +74,7 @@ func TestAPIKeysListRouteDefaultLimit(t *testing.T) {
 	}
 }
 
-func TestTemplatesCreateSendsProjectInBody(t *testing.T) {
+func TestTemplatesCreateDoesNotSendProjectInBody(t *testing.T) {
 	var payload map[string]any
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -77,7 +85,7 @@ func TestTemplatesCreateSendsProjectInBody(t *testing.T) {
 			t.Fatalf("decode body: %v", err)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"data":{"ok":true,"data":{"id":"1","name":"welcome","projectId":"p1","variables":[]}}}`))
+		_, _ = w.Write([]byte(`{"ok":true,"data":{"id":"1","createdAt":"2026-02-19T20:01:09.000Z"}}`))
 	}))
 	defer server.Close()
 
@@ -89,20 +97,29 @@ func TestTemplatesCreateSendsProjectInBody(t *testing.T) {
 	_, err = client.Templates.Create(context.Background(), CreateTemplateOptions{
 		Project: "p1",
 		RESTPostCreateTemplateBody: RESTPostCreateTemplateBody{
-			Name:      "welcome",
-			Variables: []APITemplateVariable{},
+			Name:    "welcome",
+			Content: "Hello {{name}}",
+			Variables: []APITemplateVariable{
+				{Name: "name", Fallback: "customer"},
+			},
 		},
 	})
 	if err != nil {
 		t.Fatalf("unexpected create error: %v", err)
 	}
 
-	if payload["project"] != "p1" {
-		t.Fatalf("expected project in body, got %#v", payload["project"])
+	if _, ok := payload["project"]; ok {
+		t.Fatalf("did not expect project in body: %#v", payload["project"])
+	}
+	if payload["name"] != "welcome" {
+		t.Fatalf("unexpected name in body: %#v", payload["name"])
+	}
+	if payload["content"] != "Hello {{name}}" {
+		t.Fatalf("unexpected content in body: %#v", payload["content"])
 	}
 }
 
-func TestProjectsGetReturnsHTTPError(t *testing.T) {
+func TestAPIKeysListReturnsHTTPError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte(`{"error":"invalid project id"}`))
@@ -114,7 +131,7 @@ func TestProjectsGetReturnsHTTPError(t *testing.T) {
 		t.Fatalf("unexpected constructor error: %v", err)
 	}
 
-	_, err = client.Projects.Get(context.Background(), "abc")
+	_, err = client.APIKeys.List(context.Background(), "abc", nil)
 	if err == nil {
 		t.Fatal("expected error")
 	}

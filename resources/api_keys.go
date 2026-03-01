@@ -11,16 +11,16 @@ type APIKeys struct {
 	Base
 }
 
-// CreateAPIKeyOptions mirrors RESTPostCreateAPIKeyBody & { project: string } from the Node SDK.
+// CreateAPIKeyOptions carries API key creation input plus the target project ID.
 type CreateAPIKeyOptions struct {
-	Project string `json:"project"`
+	Project string `json:"-"`
 	api.RESTPostCreateAPIKeyBody
 }
 
 // Create creates an API key for a project.
 func (r *APIKeys) Create(ctx context.Context, options CreateAPIKeyOptions) (api.RESTPostCreateAPIKeyData, error) {
 	var out api.RESTPostCreateAPIKeyData
-	err := r.Rest.Post(ctx, api.Routes.APIKeys.Create(options.Project), options, &out, nil)
+	err := r.Rest.Post(ctx, api.Routes.APIKeys.Create(options.Project), options.RESTPostCreateAPIKeyBody, &out, nil)
 	return out, err
 }
 

@@ -21,7 +21,7 @@ func TestRetryOnRetryableStatus(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"data":{"ok":true,"data":{"id":"1","name":"ok","ownerId":"2"}}}`))
+		_, _ = w.Write([]byte(`{"ok":true,"data":{"id":"1","name":"Delivery","endpoint":"https://example.com/hook","events":["sms.queued"],"status":"ACTIVE","createdAt":"2026-02-19T16:05:00.000Z"}}`))
 	}))
 	defer server.Close()
 
@@ -37,11 +37,11 @@ func TestRetryOnRetryableStatus(t *testing.T) {
 		t.Fatalf("unexpected constructor error: %v", err)
 	}
 
-	var out api.RESTGetProjectData
-	if err := client.Get(context.Background(), "/projects/1", &out, nil); err != nil {
+	var out api.RESTGetWebhookData
+	if err := client.Get(context.Background(), "/projects/1/webhooks/1", &out, nil); err != nil {
 		t.Fatalf("unexpected get error: %v", err)
 	}
-	if !out.OK || out.Data.ID != "1" {
+	if !out.OK || out.Data.ID != "1" || out.Data.Endpoint != "https://example.com/hook" {
 		t.Fatalf("unexpected output: %+v", out)
 	}
 	if attempts != 2 {
