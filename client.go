@@ -17,10 +17,10 @@ type Client struct {
 
 	// APIKeys exposes API key operations.
 	APIKeys *resources.APIKeys
-	
+
 	// Templates exposes template operations.
 	Templates *resources.Templates
-	
+
 	// Webhooks exposes webhook operations.
 	Webhooks *resources.Webhooks
 }
