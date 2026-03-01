@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	// APIBaseURL is the canonical Rewrite API origin from @rewritejs/types.
-	APIBaseURL = "https://api.rewritetoday.com"
+	// APIBaseURL is the canonical Rewrite API base URL from @rewritejs/types.
+	APIBaseURL = "https://api.rewritetoday.com/v1"
 )
 
 // Routes exposes helper builders for Rewrite API routes.

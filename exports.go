@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	// APIBaseURL is the canonical Rewrite API origin.
+	// APIBaseURL is the canonical Rewrite API base URL.
 	APIBaseURL = api.APIBaseURL
 )
 
@@ -98,6 +98,7 @@ const (
 // Webhook event/status constants.
 const (
 	WebhookEventTypeSMSQueued    = api.WebhookEventTypeSMSQueued
+	WebhookEventTypeSMSSent      = api.WebhookEventTypeSMSSent
 	WebhookEventTypeSMSDelivered = api.WebhookEventTypeSMSDelivered
 	WebhookEventTypeSMSScheduled = api.WebhookEventTypeSMSScheduled
 	WebhookEventTypeSMSFailed    = api.WebhookEventTypeSMSFailed

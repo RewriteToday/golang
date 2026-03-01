@@ -70,7 +70,7 @@ func TestCreateURLDefaultBaseURL(t *testing.T) {
 }
 
 func TestCreateURLAvoidsDoubleV1(t *testing.T) {
-	url, err := CreateURL("/projects/1", nil, "https://api.rewritetoday.com/v1")
+	url, err := CreateURL("/projects/1", nil, api.APIBaseURL)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

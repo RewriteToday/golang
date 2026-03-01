@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	defaultBaseURL = "https://api.rewritetoday.com"
+	defaultBaseURL = "https://api.rewritetoday.com/v1"
 	fiveSeconds    = 5 * time.Second
 	baseDelay      = 300 * time.Millisecond
 	maxDelay       = 10 * time.Second
