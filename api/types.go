@@ -73,6 +73,8 @@ type WebhookEventType string
 const (
 	// WebhookEventTypeSMSQueued fires when an SMS enters the queue.
 	WebhookEventTypeSMSQueued WebhookEventType = "sms.queued"
+	// WebhookEventTypeSMSSent fires when an SMS is accepted for sending.
+	WebhookEventTypeSMSSent WebhookEventType = "sms.sent"
 	// WebhookEventTypeSMSDelivered fires when an SMS is delivered.
 	WebhookEventTypeSMSDelivered WebhookEventType = "sms.delivered"
 	// WebhookEventTypeSMSScheduled fires when an SMS is scheduled.
