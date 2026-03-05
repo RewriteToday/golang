@@ -6,6 +6,8 @@
 
 It wraps authentication, typed REST calls, and resource helpers on top of the SDK REST and API layers.
 
+<img src="https://cdn.rewritetoday.com/assets/banners/go-sdk.png" width="100%" alt="Rewrite Banner"/>
+
 ## Installation
 
 Use your preferred Go workflow:
