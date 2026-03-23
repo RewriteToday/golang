@@ -8,96 +8,184 @@ import (
 )
 
 const (
-	// APIBaseURL is the canonical Rewrite API base URL from @rewritejs/types.
-	APIBaseURL = "https://api.rewritetoday.com/v1"
+	// APIBaseURL is the canonical Rewrite API base URL.
+	APIBaseURL = "https://api.rewritetoday.com"
 )
 
 // Routes exposes helper builders for Rewrite API routes.
 var Routes = RouteRegistry{
-	Webhooks:  WebhookRoutes{},
-	Templates: TemplateRoutes{},
-	APIKeys:   APIKeyRoutes{},
+	APIKeys:     APIKeyRoutes{},
+	Health:      HealthRoutes{},
+	Logs:        LogRoutes{},
+	Messages:    MessageRoutes{},
+	OTP:         OTPRoutes{},
+	Templates:   TemplateRoutes{},
+	WebhookLogs: WebhookLogRoutes{},
+	Webhooks:    WebhookRoutes{},
 }
 
-// RouteRegistry groups route builders by resource.
+// RouteRegistry groups route builders by public resource.
 type RouteRegistry struct {
-	Webhooks  WebhookRoutes
-	Templates TemplateRoutes
-	APIKeys   APIKeyRoutes
+	APIKeys     APIKeyRoutes
+	Health      HealthRoutes
+	Logs        LogRoutes
+	Messages    MessageRoutes
+	OTP         OTPRoutes
+	Templates   TemplateRoutes
+	WebhookLogs WebhookLogRoutes
+	Webhooks    WebhookRoutes
 }
 
-// WebhookRoutes builds webhook endpoints.
-type WebhookRoutes struct{}
+// APIKeyRoutes builds public API key endpoints.
+type APIKeyRoutes struct{}
+
+// HealthRoutes builds health endpoints.
+type HealthRoutes struct{}
+
+// LogRoutes builds log endpoints.
+type LogRoutes struct{}
+
+// MessageRoutes builds message endpoints.
+type MessageRoutes struct{}
+
+// OTPRoutes builds OTP endpoints.
+type OTPRoutes struct{}
 
 // TemplateRoutes builds template endpoints.
 type TemplateRoutes struct{}
 
-// APIKeyRoutes builds API key endpoints.
-type APIKeyRoutes struct{}
+// WebhookLogRoutes builds webhook log endpoints.
+type WebhookLogRoutes struct{}
 
-// List returns GET /projects/:id/webhooks with cursor query.
-func (WebhookRoutes) List(id string, options *RESTCursorOptions) string {
-	return fmt.Sprintf("/projects/%s/webhooks?%s", id, createCursorQuery(options))
+// WebhookRoutes builds webhook endpoints.
+type WebhookRoutes struct{}
+
+// Delete returns DELETE /api-keys/:apiKeyId.
+func (APIKeyRoutes) Delete(apiKeyID string) string {
+	return fmt.Sprintf("/api-keys/%s", apiKeyID)
 }
 
-// Create returns POST /projects/:id/webhooks.
-func (WebhookRoutes) Create(id string) string {
-	return fmt.Sprintf("/projects/%s/webhooks", id)
+// Check returns GET /health.
+func (HealthRoutes) Check() string {
+	return "/health"
 }
 
-// Update returns PATCH /projects/:id/webhooks/:webhookId.
-func (WebhookRoutes) Update(id, webhookID string) string {
-	return fmt.Sprintf("/projects/%s/webhooks/%s", id, webhookID)
+// Get returns GET /logs/:logId.
+func (LogRoutes) Get(logID string) string {
+	return fmt.Sprintf("/logs/%s", logID)
 }
 
-// Delete returns DELETE /projects/:id/webhooks/:webhookId.
-func (WebhookRoutes) Delete(id, webhookID string) string {
-	return fmt.Sprintf("/projects/%s/webhooks/%s", id, webhookID)
+// Send returns POST /messages.
+func (MessageRoutes) Send() string {
+	return "/messages"
 }
 
-// Get returns GET /projects/:id/webhooks/:webhookId.
-func (WebhookRoutes) Get(id, webhookID string) string {
-	return fmt.Sprintf("/projects/%s/webhooks/%s", id, webhookID)
+// Create is a compatibility alias for Send.
+func (r MessageRoutes) Create() string {
+	return r.Send()
 }
 
-// List returns GET /projects/:id/templates with cursor query.
-func (TemplateRoutes) List(id string, options *RESTCursorOptions) string {
-	return fmt.Sprintf("/projects/%s/templates?%s", id, createCursorQuery(options))
+// Batch returns POST /messages/batch.
+func (MessageRoutes) Batch() string {
+	return "/messages/batch"
 }
 
-// Create returns POST /projects/:id/templates.
-func (TemplateRoutes) Create(id string) string {
-	return fmt.Sprintf("/projects/%s/templates", id)
+// Cancel returns POST /messages/:messageId/cancel.
+func (MessageRoutes) Cancel(messageID string) string {
+	return fmt.Sprintf("/messages/%s/cancel", messageID)
 }
 
-// Update returns PATCH /projects/:id/templates/:templateId.
-func (TemplateRoutes) Update(id, templateID string) string {
-	return fmt.Sprintf("/projects/%s/templates/%s", id, templateID)
+// Get returns GET /messages/:messageId.
+func (MessageRoutes) Get(messageID string) string {
+	return fmt.Sprintf("/messages/:%s", messageID)
 }
 
-// Delete returns DELETE /projects/:id/templates/:templateId.
-func (TemplateRoutes) Delete(id, templateID string) string {
-	return fmt.Sprintf("/projects/%s/templates/%s", id, templateID)
+// List returns GET /messages with cursor and filter query params.
+func (MessageRoutes) List(options *RESTGetListMessagesQueryParams) string {
+	return appendQuery("/messages", createMessagesListQuery(options))
 }
 
-// Get returns GET /projects/:id/templates/:templateId.
-func (TemplateRoutes) Get(id, templateID string) string {
-	return fmt.Sprintf("/projects/%s/templates/%s", id, templateID)
+// Send returns POST /otp.
+func (OTPRoutes) Send() string {
+	return "/otp"
 }
 
-// List returns GET /projects/:id/api-keys with cursor query.
-func (APIKeyRoutes) List(id string, options *RESTCursorOptions) string {
-	return fmt.Sprintf("/projects/%s/api-keys?%s", id, createCursorQuery(options))
+// Create is a compatibility alias for Send.
+func (r OTPRoutes) Create() string {
+	return r.Send()
 }
 
-// Create returns POST /projects/:id/api-keys.
-func (APIKeyRoutes) Create(id string) string {
-	return fmt.Sprintf("/projects/%s/api-keys", id)
+// Verify returns POST /otp/:otpId/verify.
+func (OTPRoutes) Verify(otpID string) string {
+	return fmt.Sprintf("/otp/%s/verify", otpID)
 }
 
-// Delete returns DELETE /projects/:id/api-keys/:apiKeyId.
-func (APIKeyRoutes) Delete(id, apiKeyID string) string {
-	return fmt.Sprintf("/projects/%s/api-keys/%s", id, apiKeyID)
+// List returns GET /templates with cursor query and optional i18n expansion.
+func (TemplateRoutes) List(options *RESTGetListTemplatesQueryParams) string {
+	return appendQuery("/templates", createTemplatesListQuery(options))
+}
+
+// Create returns POST /templates.
+func (TemplateRoutes) Create() string {
+	return "/templates"
+}
+
+// Update returns PATCH /templates/:templateId.
+func (TemplateRoutes) Update(templateID string) string {
+	return fmt.Sprintf("/templates/%s", templateID)
+}
+
+// Delete returns DELETE /templates/:templateId.
+func (TemplateRoutes) Delete(templateID string) string {
+	return fmt.Sprintf("/templates/%s", templateID)
+}
+
+// Get returns GET /templates/:templateId.
+func (TemplateRoutes) Get(templateID string) string {
+	return fmt.Sprintf("/templates/%s", templateID)
+}
+
+// List returns GET /webhooks with cursor query.
+func (WebhookRoutes) List(options *RESTGetListWebhooksQueryParams) string {
+	return appendQuery("/webhooks", createCursorQuery(options))
+}
+
+// Create returns POST /webhooks.
+func (WebhookRoutes) Create() string {
+	return "/webhooks"
+}
+
+// Update returns PATCH /webhooks/:webhookId.
+func (WebhookRoutes) Update(webhookID string) string {
+	return fmt.Sprintf("/webhooks/%s", webhookID)
+}
+
+// Delete returns DELETE /webhooks/:webhookId.
+func (WebhookRoutes) Delete(webhookID string) string {
+	return fmt.Sprintf("/webhooks/%s", webhookID)
+}
+
+// Get returns GET /webhooks/:webhookId.
+func (WebhookRoutes) Get(webhookID string) string {
+	return fmt.Sprintf("/webhooks/%s", webhookID)
+}
+
+// Logs returns GET /webhooks/:id/logs with cursor query and filters.
+func (WebhookRoutes) Logs(webhookID string, options *RESTGetListWebhookLogsQueryParams) string {
+	return appendQuery(fmt.Sprintf("/webhooks/%s/logs", webhookID), createWebhookLogsListQuery(options))
+}
+
+// List is a compatibility alias for Routes.Webhooks.Logs.
+func (WebhookLogRoutes) List(webhookID string, options *RESTGetListWebhookLogsQueryParams) string {
+	return Routes.Webhooks.Logs(webhookID, options)
+}
+
+func appendQuery(route, query string) string {
+	if query == "" {
+		return route
+	}
+
+	return route + "?" + query
 }
 
 func createCursorQuery(options *RESTCursorOptions) string {
@@ -113,6 +201,58 @@ func createCursorQuery(options *RESTCursorOptions) string {
 		}
 		if options.Before != "" {
 			parts = append(parts, "before="+url.QueryEscape(string(options.Before)))
+		}
+	}
+
+	return strings.Join(parts, "&")
+}
+
+func createTemplatesListQuery(options *RESTGetListTemplatesQueryParams) string {
+	cursor := RESTCursorOptions{}
+	if options != nil {
+		cursor = options.RESTCursorOptions
+	}
+
+	parts := []string{createCursorQuery(&cursor)}
+	if with18n := options.with18n(); with18n != nil {
+		parts = append(parts, "with18n="+url.QueryEscape(strconv.FormatBool(*with18n)))
+	}
+
+	return strings.Join(parts, "&")
+}
+
+func createMessagesListQuery(options *RESTGetListMessagesQueryParams) string {
+	cursor := RESTCursorOptions{}
+	if options != nil {
+		cursor = options.RESTCursorOptions
+	}
+
+	parts := []string{createCursorQuery(&cursor)}
+	if options != nil {
+		if options.Status != "" {
+			parts = append(parts, "status="+url.QueryEscape(string(options.Status)))
+		}
+		if options.Country != "" {
+			parts = append(parts, "country="+url.QueryEscape(string(options.Country)))
+		}
+	}
+
+	return strings.Join(parts, "&")
+}
+
+func createWebhookLogsListQuery(options *RESTGetListWebhookLogsQueryParams) string {
+	cursor := RESTCursorOptions{}
+	if options != nil {
+		cursor = options.RESTCursorOptions
+	}
+
+	parts := []string{createCursorQuery(&cursor)}
+	if options != nil {
+		if options.Type != "" {
+			parts = append(parts, "type="+url.QueryEscape(string(options.Type)))
+		}
+		if options.Status != "" {
+			parts = append(parts, "status="+url.QueryEscape(string(options.Status)))
 		}
 	}
 

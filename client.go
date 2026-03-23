@@ -15,14 +15,26 @@ type Client struct {
 	// Secret is the resolved API secret used for authentication.
 	secret string
 
-	// APIKeys exposes API key operations.
-	APIKeys *resources.APIKeys
+	// APIKeys exposes public API key operations.
+	APIKeys *resources.APIKeyManager
+
+	// Logs exposes webhook delivery log operations.
+	Logs *resources.LogManager
+
+	// Messages exposes message operations.
+	Messages *resources.MessageManager
+
+	// OTP exposes OTP operations.
+	OTP *resources.OTPManager
 
 	// Templates exposes template operations.
-	Templates *resources.Templates
+	Templates *resources.TemplateManager
+
+	// WebhookLogs is kept as a compatibility alias to Logs.
+	WebhookLogs *resources.LogManager
 
 	// Webhooks exposes webhook operations.
-	Webhooks *resources.Webhooks
+	Webhooks *resources.WebhookManager
 }
 
 // Rewrite is an alias to Client for naming parity with the Node SDK.
@@ -66,10 +78,14 @@ func New(options any) (*Client, error) {
 	client := &Client{
 		Rest:      restClient,
 		secret:    resolved.Secret,
-		APIKeys:   &resources.APIKeys{Base: resources.Base{Rest: restClient}},
-		Templates: &resources.Templates{Base: resources.Base{Rest: restClient}},
-		Webhooks:  &resources.Webhooks{Base: resources.Base{Rest: restClient}},
+		APIKeys:   &resources.APIKeyManager{Base: resources.Base{Rest: restClient}},
+		Logs:      &resources.LogManager{Base: resources.Base{Rest: restClient}},
+		Messages:  &resources.MessageManager{Base: resources.Base{Rest: restClient}},
+		OTP:       &resources.OTPManager{Base: resources.Base{Rest: restClient}},
+		Templates: &resources.TemplateManager{Base: resources.Base{Rest: restClient}},
+		Webhooks:  &resources.WebhookManager{Base: resources.Base{Rest: restClient}},
 	}
+	client.WebhookLogs = client.Logs
 
 	return client, nil
 }

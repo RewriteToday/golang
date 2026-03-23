@@ -6,52 +6,50 @@ import (
 	"github.com/rewritetoday/golang/api"
 )
 
-// Templates provides template resource operations.
-type Templates struct {
+// TemplateManager provides template resource operations.
+type TemplateManager struct {
 	Base
 }
 
-// CreateTemplateOptions carries template creation input plus the target project ID.
-type CreateTemplateOptions struct {
-	Project string `json:"-"`
-	api.RESTPostCreateTemplateBody
-}
+// Templates is kept as a compatibility alias for TemplateManager.
+type Templates = TemplateManager
 
-// UpdateTemplateOptions carries template update input plus the target project ID.
-type UpdateTemplateOptions struct {
-	Project string `json:"-"`
-	api.RESTPatchUpdateTemplateBody
-}
-
-// Create creates a template for a project.
-func (r *Templates) Create(ctx context.Context, options CreateTemplateOptions) (api.RESTPostCreateTemplateData, error) {
+// Create creates a template.
+func (r *TemplateManager) Create(ctx context.Context, body api.RESTPostCreateTemplateBody) (api.RESTPostCreateTemplateData, error) {
 	var out api.RESTPostCreateTemplateData
-	err := r.Rest.Post(ctx, api.Routes.Templates.Create(options.Project), options.RESTPostCreateTemplateBody, &out, nil)
+	err := r.Rest.Post(ctx, api.Routes.Templates.Create(), body, &out, nil)
 	return out, err
 }
 
-// Update updates a template by ID.
-func (r *Templates) Update(ctx context.Context, id string, options UpdateTemplateOptions) (api.RESTPatchUpdateTemplateData, error) {
-	var out api.RESTPatchUpdateTemplateData
-	err := r.Rest.Patch(ctx, api.Routes.Templates.Update(options.Project, id), options.RESTPatchUpdateTemplateBody, &out, nil)
+// Update updates a template by ID using the same payload and response shape exposed by the Node SDK.
+func (r *TemplateManager) Update(ctx context.Context, id string, body api.RESTPostCreateTemplateBody) (api.RESTPostCreateTemplateData, error) {
+	var out api.RESTPostCreateTemplateData
+	err := r.Rest.Patch(ctx, api.Routes.Templates.Update(id), body, &out, nil)
 	return out, err
 }
 
 // Delete deletes a template by ID.
-func (r *Templates) Delete(ctx context.Context, id, project string) error {
-	return r.Rest.Delete(ctx, api.Routes.Templates.Delete(project, id), nil, nil)
+func (r *TemplateManager) Delete(ctx context.Context, id string) (api.RESTDeleteTemplateData, error) {
+	var out api.RESTDeleteTemplateData
+	err := r.Rest.Delete(ctx, api.Routes.Templates.Delete(id), &out, nil)
+	return out, err
 }
 
-// List lists templates for a project.
-func (r *Templates) List(ctx context.Context, project string, query *api.RESTGetListTemplatesQueryParams) (api.RESTGetListTemplatesData, error) {
+// List lists templates.
+func (r *TemplateManager) List(ctx context.Context, query *api.RESTGetListTemplatesQueryParams) (api.RESTGetListTemplatesData, error) {
 	var out api.RESTGetListTemplatesData
-	err := r.Rest.Get(ctx, api.Routes.Templates.List(project, query), &out, nil)
+	err := r.Rest.Get(ctx, api.Routes.Templates.List(query), &out, nil)
 	return out, err
 }
 
-// Get fetches a template by ID or unique name.
-func (r *Templates) Get(ctx context.Context, identifier, project string) (api.RESTGetTemplateData, error) {
+// Get fetches a template by ID.
+func (r *TemplateManager) Get(ctx context.Context, id string) (api.RESTGetTemplateData, error) {
 	var out api.RESTGetTemplateData
-	err := r.Rest.Get(ctx, api.Routes.Templates.Get(project, identifier), &out, nil)
+	err := r.Rest.Get(ctx, api.Routes.Templates.Get(id), &out, nil)
 	return out, err
+}
+
+// GetWithQuery is a compatibility helper for the previous Go SDK signature.
+func (r *TemplateManager) GetWithQuery(ctx context.Context, id string, _ *api.RESTGetTemplateQueryParams) (api.RESTGetTemplateData, error) {
+	return r.Get(ctx, id)
 }

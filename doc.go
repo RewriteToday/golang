@@ -3,6 +3,9 @@
 // The package exposes a high-level client with typed resources:
 //
 //   - APIKeys
+//   - Logs
+//   - Messages
+//   - OTP
 //   - Templates
 //   - Webhooks
 //
