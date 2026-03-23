@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	defaultBaseURL = "https://api.rewritetoday.com/v1"
+	defaultBaseURL = "https://api.rewritetoday.com"
 	fiveSeconds    = 5 * time.Second
 	baseDelay      = 300 * time.Millisecond
 	maxDelay       = 10 * time.Second
@@ -95,6 +95,15 @@ func (c *Client) Post(ctx context.Context, route string, data any, out any, opti
 func (c *Client) Delete(ctx context.Context, route string, out any, options *FetchOptions) error {
 	opts := cloneFetchOptions(options)
 	opts.method = "DELETE"
+	return c.fetch(ctx, route, out, opts, 0)
+}
+
+// DeleteWithBody executes a DELETE request with a JSON body.
+func (c *Client) DeleteWithBody(ctx context.Context, route string, data any, out any, options *FetchOptions) error {
+	opts := cloneFetchOptions(options)
+	opts.method = "DELETE"
+	opts.data = data
+	opts.hasData = true
 	return c.fetch(ctx, route, out, opts, 0)
 }
 
