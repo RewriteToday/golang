@@ -44,7 +44,6 @@ func main() {
 
 	hooks, err := client.Webhooks.List(
 		context.Background(),
-		"123456789012345678",
 		&rewrite.RESTGetListWebhooksQueryParams{Limit: 10},
 	)
 
@@ -99,17 +98,16 @@ func buildClient() (*rewrite.Client, error) {
 </div>
 
 ```go
-projectId := "123456789012345678"
-
-created, err := client.Templates.Create(context.Background(), rewrite.CreateTemplateOptions{
-	Project: projectId,
-	RESTPostCreateTemplateBody: rewrite.RESTPostCreateTemplateBody{
-		Name:    "welcome_sms",
-		Content: "Hi {{name}}, welcome to {{company}}.",
-		Variables: []rewrite.APITemplateVariable{
-			{Name: "name", Fallback: "customer"},
-			{Name: "company", Fallback: "Rewrite"},
-		},
+created, err := client.Templates.Create(context.Background(), rewrite.RESTPostCreateTemplateBody{
+	Name:        "welcome_sms",
+	Description: "Welcome copy",
+	Content:     "Hi {{name}}, welcome to {{company}}.",
+	I18N: map[rewrite.CountryCode]string{
+		"br": "Oi {{name}}, bem-vindo a {{company}}.",
+	},
+	Variables: []rewrite.APITemplateVariable{
+		{Name: "name", Fallback: "customer"},
+		{Name: "company", Fallback: "Rewrite"},
 	},
 })
 
@@ -117,7 +115,7 @@ if err != nil {
 	log.Fatal(err)
 }
 
-templates, err := client.Templates.List(context.Background(), projectId, &rewrite.RESTGetListTemplatesQueryParams{Limit: 20})
+templates, err := client.Templates.List(context.Background(), &rewrite.RESTGetListTemplatesQueryParams{Limit: 20})
 
 if err != nil {
 	log.Fatal(err)
@@ -133,15 +131,12 @@ fmt.Printf("created=%+v templates=%+v\n", created, templates)
 </div>
 
 ```go
-projectId := "123456789012345678"
-
-hook, err := client.Webhooks.Create(context.Background(), rewrite.CreateWebhookOptions{
-	Project:  projectId,
+hook, err := client.Webhooks.Create(context.Background(), rewrite.RESTPostCreateWebhookBody{
 	Name:     "delivery-events",
 	Endpoint: "https://example.com/webhooks/rewrite",
 	Events: []rewrite.WebhookEventType{
-		rewrite.WebhookEventTypeSMSDelivered,
-		rewrite.WebhookEventTypeSMSFailed,
+		rewrite.WebhookEventTypeMessageDelivered,
+		rewrite.WebhookEventTypeMessageFailed,
 	},
 })
 
@@ -149,18 +144,15 @@ if err != nil {
 	log.Fatal(err)
 }
 
-_, err = client.Webhooks.Update(context.Background(), string(hook.Data.ID), rewrite.UpdateWebhookOptions{
-	Project: projectId,
-	RESTPatchUpdateWebhookBody: rewrite.RESTPatchUpdateWebhookBody{
-		Status: rewrite.WebhookStatusInactive,
-	},
+_, err = client.Webhooks.Update(context.Background(), string(hook.Data.ID), rewrite.RESTPatchUpdateWebhookBody{
+	Status: rewrite.WebhookStatusInactive,
 })
 
 if err != nil {
 	log.Fatal(err)
 }
 
-hooks, err := client.Webhooks.List(context.Background(), projectId, &rewrite.RESTGetListWebhooksQueryParams{Limit: 10})
+hooks, err := client.Webhooks.List(context.Background(), &rewrite.RESTGetListWebhooksQueryParams{Limit: 10})
 
 if err != nil {
 	log.Fatal(err)
@@ -171,21 +163,16 @@ fmt.Printf("%+v\n", hooks)
 
 <div align="center">
 
-### API Keys
+### Messages
 
 </div>
 
 ```go
-projectId := "123456789012345678"
-
-key, err := client.APIKeys.Create(context.Background(), rewrite.CreateAPIKeyOptions{
-	Project: projectId,
-	RESTPostCreateAPIKeyBody: rewrite.RESTPostCreateAPIKeyBody{
-		Name: "backend-prod",
-		Scopes: []rewrite.APIKeyScope{
-			rewrite.APIKeyScopeReadProject,
-			rewrite.APIKeyScopeReadTemplates,
-		},
+createdMessage, err := client.Messages.Send(context.Background(), rewrite.SendMessageOptions{
+	IdempotencyKey: "msg-123",
+	RESTPostSendMessageBody: rewrite.RESTPostSendMessageBody{
+		To:      "+5511999999999",
+		Content: "Hello from Rewrite",
 	},
 })
 
@@ -193,7 +180,42 @@ if err != nil {
 	log.Fatal(err)
 }
 
-fmt.Printf("%+v\n", key)
+fmt.Printf("%+v\n", createdMessage)
+```
+
+<div align="center">
+
+### OTP
+
+</div>
+
+```go
+otp, err := client.OTP.Send(context.Background(), rewrite.SendOTPMessageOptions{
+	IdempotencyKey: "otp-123",
+	RESTPostSendOTPMessageBody: rewrite.RESTPostSendOTPMessageBody{
+		To:        "+5511999999999",
+		Prefix:    "Rewrite",
+		ExpiresIn: 5,
+	},
+})
+
+if err != nil {
+	log.Fatal(err)
+}
+
+verified, err := client.OTP.Verify(context.Background(), rewrite.VerifyOTPOptions{
+	ID: rewrite.Snowflake(otp.Data.ID),
+	RESTPostVerifyOTPCodeBody: rewrite.RESTPostVerifyOTPCodeBody{
+		To:   "+5511999999999",
+		Code: "123456",
+	},
+})
+
+if err != nil {
+	log.Fatal(err)
+}
+
+fmt.Printf("otp=%+v verified=%+v\n", otp, verified)
 ```
 
 <div align="center">
@@ -205,7 +227,7 @@ Requests run through the SDK REST client. HTTP failures can return `HTTPError`.
 </div>
 
 ```go
-_, err := client.APIKeys.List(context.Background(), "invalid_id", nil)
+_, err := client.Webhooks.Get(context.Background(), "invalid_id")
 
 if err != nil {
 	var httpErr *rewrite.HTTPError
