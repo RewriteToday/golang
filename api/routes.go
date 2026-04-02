@@ -15,10 +15,11 @@ const (
 // Routes exposes helper builders for Rewrite API routes.
 var Routes = RouteRegistry{
 	APIKeys:     APIKeyRoutes{},
-	Health:      HealthRoutes{},
+	Contacts:    ContactRoutes{},
 	Logs:        LogRoutes{},
 	Messages:    MessageRoutes{},
 	OTP:         OTPRoutes{},
+	Segments:    SegmentRoutes{Contacts: SegmentContactRoutes{}},
 	Templates:   TemplateRoutes{},
 	WebhookLogs: WebhookLogRoutes{},
 	Webhooks:    WebhookRoutes{},
@@ -27,10 +28,11 @@ var Routes = RouteRegistry{
 // RouteRegistry groups route builders by public resource.
 type RouteRegistry struct {
 	APIKeys     APIKeyRoutes
-	Health      HealthRoutes
+	Contacts    ContactRoutes
 	Logs        LogRoutes
 	Messages    MessageRoutes
 	OTP         OTPRoutes
+	Segments    SegmentRoutes
 	Templates   TemplateRoutes
 	WebhookLogs WebhookLogRoutes
 	Webhooks    WebhookRoutes
@@ -39,8 +41,8 @@ type RouteRegistry struct {
 // APIKeyRoutes builds public API key endpoints.
 type APIKeyRoutes struct{}
 
-// HealthRoutes builds health endpoints.
-type HealthRoutes struct{}
+// ContactRoutes builds contact endpoints.
+type ContactRoutes struct{}
 
 // LogRoutes builds log endpoints.
 type LogRoutes struct{}
@@ -50,6 +52,14 @@ type MessageRoutes struct{}
 
 // OTPRoutes builds OTP endpoints.
 type OTPRoutes struct{}
+
+// SegmentRoutes builds segment endpoints.
+type SegmentRoutes struct {
+	Contacts SegmentContactRoutes
+}
+
+// SegmentContactRoutes builds nested segment contact endpoints.
+type SegmentContactRoutes struct{}
 
 // TemplateRoutes builds template endpoints.
 type TemplateRoutes struct{}
@@ -63,11 +73,6 @@ type WebhookRoutes struct{}
 // Delete returns DELETE /api-keys/:apiKeyId.
 func (APIKeyRoutes) Delete(apiKeyID string) string {
 	return fmt.Sprintf("/api-keys/%s", apiKeyID)
-}
-
-// Check returns GET /health.
-func (HealthRoutes) Check() string {
-	return "/health"
 }
 
 // Get returns GET /logs/:logId.
@@ -97,7 +102,7 @@ func (MessageRoutes) Cancel(messageID string) string {
 
 // Get returns GET /messages/:messageId.
 func (MessageRoutes) Get(messageID string) string {
-	return fmt.Sprintf("/messages/:%s", messageID)
+	return fmt.Sprintf("/messages/%s", messageID)
 }
 
 // List returns GET /messages with cursor and filter query params.
@@ -120,6 +125,74 @@ func (OTPRoutes) Verify(otpID string) string {
 	return fmt.Sprintf("/otp/%s/verify", otpID)
 }
 
+// List returns GET /contacts with cursor query params.
+func (ContactRoutes) List(options *RESTGetListContactsQueryParams) string {
+	return appendQuery("/contacts", createCursorQuery((*RESTCursorOptions)(options)))
+}
+
+// Create returns POST /contacts.
+func (ContactRoutes) Create() string {
+	return "/contacts"
+}
+
+// Get returns GET /contacts/:identifier.
+func (ContactRoutes) Get(identifier string) string {
+	return fmt.Sprintf("/contacts/%s", identifier)
+}
+
+// Update returns PATCH /contacts/:id.
+func (ContactRoutes) Update(id string) string {
+	return fmt.Sprintf("/contacts/%s", id)
+}
+
+// Delete returns DELETE /contacts/:id.
+func (ContactRoutes) Delete(id string) string {
+	return fmt.Sprintf("/contacts/%s", id)
+}
+
+// List returns GET /segments with cursor query params.
+func (SegmentRoutes) List(options *RESTGetListSegmentsQueryParams) string {
+	return appendQuery("/segments", createCursorQuery((*RESTCursorOptions)(options)))
+}
+
+// Create returns POST /segments.
+func (SegmentRoutes) Create() string {
+	return "/segments"
+}
+
+// Get returns GET /segments/:id.
+func (SegmentRoutes) Get(id string) string {
+	return fmt.Sprintf("/segments/%s", id)
+}
+
+// Update returns PATCH /segments/:id.
+func (SegmentRoutes) Update(id string) string {
+	return fmt.Sprintf("/segments/%s", id)
+}
+
+// Delete returns DELETE /segments/:id.
+func (SegmentRoutes) Delete(id string) string {
+	return fmt.Sprintf("/segments/%s", id)
+}
+
+// List returns GET /segments/:id/contacts with cursor query params.
+func (SegmentContactRoutes) List(id string, options *RESTGetListSegmentContactsQueryParams) string {
+	return appendQuery(
+		fmt.Sprintf("/segments/%s/contacts", id),
+		createCursorQuery((*RESTCursorOptions)(options)),
+	)
+}
+
+// Attach returns POST /segments/:id/contacts.
+func (SegmentContactRoutes) Attach(id string) string {
+	return fmt.Sprintf("/segments/%s/contacts", id)
+}
+
+// Detach returns DELETE /segments/:id/contacts/:contactId.
+func (SegmentContactRoutes) Detach(id, contactID string) string {
+	return fmt.Sprintf("/segments/%s/contacts/%s", id, contactID)
+}
+
 // List returns GET /templates with cursor query and optional i18n expansion.
 func (TemplateRoutes) List(options *RESTGetListTemplatesQueryParams) string {
 	return appendQuery("/templates", createTemplatesListQuery(options))
@@ -140,9 +213,10 @@ func (TemplateRoutes) Delete(templateID string) string {
 	return fmt.Sprintf("/templates/%s", templateID)
 }
 
-// Get returns GET /templates/:templateId.
-func (TemplateRoutes) Get(templateID string) string {
-	return fmt.Sprintf("/templates/%s", templateID)
+// Get returns GET /templates/:identifier with optional query params.
+func (TemplateRoutes) Get(identifier string, options ...*RESTGetTemplateQueryParams) string {
+	query := createTemplateGetQuery(firstTemplateQueryOptions(options))
+	return appendQuery(fmt.Sprintf("/templates/%s", identifier), query)
 }
 
 // List returns GET /webhooks with cursor query.
@@ -214,8 +288,21 @@ func createTemplatesListQuery(options *RESTGetListTemplatesQueryParams) string {
 	}
 
 	parts := []string{createCursorQuery(&cursor)}
-	if with18n := options.with18n(); with18n != nil {
-		parts = append(parts, "with18n="+url.QueryEscape(strconv.FormatBool(*with18n)))
+	if withI18n := options.withI18n(); withI18n != nil {
+		parts = append(parts, "withi18n="+url.QueryEscape(strconv.FormatBool(*withI18n)))
+	}
+
+	return strings.Join(parts, "&")
+}
+
+func createTemplateGetQuery(options *RESTGetTemplateQueryParams) string {
+	if options == nil {
+		return ""
+	}
+
+	parts := make([]string, 0, 1)
+	if withI18n := options.withI18n(); withI18n != nil {
+		parts = append(parts, "withi18n="+url.QueryEscape(strconv.FormatBool(*withI18n)))
 	}
 
 	return strings.Join(parts, "&")
@@ -257,4 +344,12 @@ func createWebhookLogsListQuery(options *RESTGetListWebhookLogsQueryParams) stri
 	}
 
 	return strings.Join(parts, "&")
+}
+
+func firstTemplateQueryOptions(options []*RESTGetTemplateQueryParams) *RESTGetTemplateQueryParams {
+	if len(options) == 0 {
+		return nil
+	}
+
+	return options[0]
 }

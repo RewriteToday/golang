@@ -29,9 +29,11 @@ type (
 // Resource option aliases.
 type (
 	APIKeyManager             = resources.APIKeyManager
+	ContactManager            = resources.ContactManager
 	LogManager                = resources.LogManager
 	MessageManager            = resources.MessageManager
 	OTPManager                = resources.OTPManager
+	SegmentManager            = resources.SegmentManager
 	TemplateManager           = resources.TemplateManager
 	WebhookManager            = resources.WebhookManager
 	SendMessageOptions        = resources.SendMessageOptions
@@ -56,15 +58,22 @@ type (
 	JSONNull                      = api.JSONNull
 	APIAPIKey                     = api.APIAPIKey
 	APICreatedAPIKey              = api.APICreatedAPIKey
+	APIContact                    = api.APIContact
+	APICreatedContact             = api.APICreatedContact
+	APISegment                    = api.APISegment
 	APITemplate                   = api.APITemplate
 	APICreatedTemplate            = api.APICreatedTemplate
 	APITemplateVariable           = api.APITemplateVariable
+	APITemplateTag                = api.APITemplateTag
 	APIWebhook                    = api.APIWebhook
+	APIWebhookSummary             = api.APIWebhookSummary
+	APIWebhookDelivery            = api.APIWebhookDelivery
 	APICreatedWebhook             = api.APICreatedWebhook
 	APIMessageTag                 = api.APIMessageTag
 	APIMessageSegmentationOptions = api.APIMessageSegmentationOptions
 	APIMessageAnalysisSegments    = api.APIMessageAnalysisSegments
 	APIMessageAnalysis            = api.APIMessageAnalysis
+	MessageError                  = api.MessageError
 	APIMessageError               = api.APIMessageError
 	APIMessage                    = api.APIMessage
 	APIMessageWithoutAnalysis     = api.APIMessageWithoutAnalysis
@@ -78,9 +87,9 @@ type (
 	APIWebhookEventData           = api.APIWebhookEventData
 	APIWebhookEvent               = api.APIWebhookEvent
 	APIWebhookLog                 = api.APIWebhookLog
+	APIWebhookLogSummary          = api.APIWebhookLogSummary
 	APIWebhookLogListItem         = api.APIWebhookLogListItem
 	APIWebhookLogList             = api.APIWebhookLogList
-	APIHealth                     = api.APIHealth
 	APIKeyScope                   = api.APIKeyScope
 	MessageProvider               = api.MessageProvider
 	MessageType                   = api.MessageType
@@ -90,6 +99,7 @@ type (
 	MessageSegmentationMode       = api.MessageSegmentationMode
 	MessageAnalysisReason         = api.MessageAnalysisReason
 	OtpAttemptStatus              = api.OtpAttemptStatus
+	WebhookEventSelection         = api.WebhookEventSelection
 	WebhookEventType              = api.WebhookEventType
 	WebhookStatus                 = api.WebhookStatus
 	WebhookDeliveryStatus         = api.WebhookDeliveryStatus
@@ -98,50 +108,71 @@ type (
 
 // API response/body aliases.
 type (
-	RESTGetHealthData                 = api.RESTGetHealthData
-	RESTGetListWebhooksData           = api.RESTGetListWebhooksData
-	RESTGetListWebhooksQueryParams    = api.RESTGetListWebhooksQueryParams
-	RESTGetWebhookData                = api.RESTGetWebhookData
-	RESTPostCreateWebhookData         = api.RESTPostCreateWebhookData
-	RESTPostCreateWebhookBody         = api.RESTPostCreateWebhookBody
-	RESTPatchUpdateWebhookData        = api.RESTPatchUpdateWebhookData
-	RESTPatchUpdateWebhookBody        = api.RESTPatchUpdateWebhookBody
-	RESTDeleteWebhookData             = api.RESTDeleteWebhookData
-	RESTGetListWebhookLogsQueryParams = api.RESTGetListWebhookLogsQueryParams
-	RESTGetListWebhookLogsData        = api.RESTGetListWebhookLogsData
-	RESTGetListTemplatesQueryParams   = api.RESTGetListTemplatesQueryParams
-	RESTGetListTemplatesData          = api.RESTGetListTemplatesData
-	RESTGetTemplateQueryParams        = api.RESTGetTemplateQueryParams
-	RESTGetTemplateData               = api.RESTGetTemplateData
-	RESTPostCreateTemplateData        = api.RESTPostCreateTemplateData
-	RESTPostCreateTemplateBody        = api.RESTPostCreateTemplateBody
-	RESTPatchUpdateTemplateData       = api.RESTPatchUpdateTemplateData
-	RESTPatchUpdateTemplateBody       = api.RESTPatchUpdateTemplateBody
-	RESTDeleteTemplateData            = api.RESTDeleteTemplateData
-	RESTPostSendMessageBody           = api.RESTPostSendMessageBody
-	RESTPostSendMessageData           = api.RESTPostSendMessageData
-	RESTPostSendBatchMessagesBody     = api.RESTPostSendBatchMessagesBody
-	RESTPostSendBatchMessagesData     = api.RESTPostSendBatchMessagesData
-	RESTPostCreateMessageBody         = api.RESTPostCreateMessageBody
-	RESTPostCreateMessageData         = api.RESTPostCreateMessageData
-	RESTPostCreateMessagesBatchBody   = api.RESTPostCreateMessagesBatchBody
-	RESTPostCreateMessagesBatchData   = api.RESTPostCreateMessagesBatchData
-	RESTPostCancelMessageBody         = api.RESTPostCancelMessageBody
-	RESTPostCancelMessageData         = api.RESTPostCancelMessageData
-	RESTGetMessageData                = api.RESTGetMessageData
-	RESTGetListMessagesQueryParams    = api.RESTGetListMessagesQueryParams
-	RESTGetListMessagesData           = api.RESTGetListMessagesData
-	RESTPostSendOTPMessageBody        = api.RESTPostSendOTPMessageBody
-	RESTPostSendOTPMessageData        = api.RESTPostSendOTPMessageData
-	RESTPostVerifyOTPCodeBody         = api.RESTPostVerifyOTPCodeBody
-	RESTPostVerifyOTPCodeData         = api.RESTPostVerifyOTPCodeData
-	RESTPostCreateOTPBody             = api.RESTPostCreateOTPBody
-	RESTPostCreateOTPData             = api.RESTPostCreateOTPData
-	RESTPostVerifyOTPBody             = api.RESTPostVerifyOTPBody
-	RESTPostVerifyOTPData             = api.RESTPostVerifyOTPData
-	RESTGetWebhookLogData             = api.RESTGetWebhookLogData
-	RESTGetLogData                    = api.RESTGetLogData
-	RESTDeleteAPIKeyData              = api.RESTDeleteAPIKeyData
+	RESTGetContactData                    = api.RESTGetContactData
+	RESTGetListContactsData               = api.RESTGetListContactsData
+	RESTGetListContactsQueryParams        = api.RESTGetListContactsQueryParams
+	RESTPostCreateContactData             = api.RESTPostCreateContactData
+	RESTPostCreateContactBody             = api.RESTPostCreateContactBody
+	RESTPatchUpdateContactData            = api.RESTPatchUpdateContactData
+	RESTPatchUpdateContactBody            = api.RESTPatchUpdateContactBody
+	RESTDeleteContactData                 = api.RESTDeleteContactData
+	RESTGetSegmentData                    = api.RESTGetSegmentData
+	RESTGetListSegmentsData               = api.RESTGetListSegmentsData
+	RESTGetListSegmentsQueryParams        = api.RESTGetListSegmentsQueryParams
+	RESTPostCreateSegmentData             = api.RESTPostCreateSegmentData
+	RESTPostCreateSegmentBody             = api.RESTPostCreateSegmentBody
+	RESTPatchUpdateSegmentData            = api.RESTPatchUpdateSegmentData
+	RESTPatchUpdateSegmentBody            = api.RESTPatchUpdateSegmentBody
+	RESTDeleteSegmentData                 = api.RESTDeleteSegmentData
+	RESTGetListSegmentContactsData        = api.RESTGetListSegmentContactsData
+	RESTGetListSegmentContactsQueryParams = api.RESTGetListSegmentContactsQueryParams
+	RESTPostAttachSegmentContactBody      = api.RESTPostAttachSegmentContactBody
+	RESTPostAttachSegmentContactData      = api.RESTPostAttachSegmentContactData
+	RESTDeleteDetachSegmentContactData    = api.RESTDeleteDetachSegmentContactData
+	RESTGetListWebhooksData               = api.RESTGetListWebhooksData
+	RESTGetListWebhooksQueryParams        = api.RESTGetListWebhooksQueryParams
+	RESTGetWebhookData                    = api.RESTGetWebhookData
+	RESTPostCreateWebhookData             = api.RESTPostCreateWebhookData
+	RESTWebhookDeliveryBody               = api.RESTWebhookDeliveryBody
+	RESTPostCreateWebhookBody             = api.RESTPostCreateWebhookBody
+	RESTPatchUpdateWebhookData            = api.RESTPatchUpdateWebhookData
+	RESTPatchUpdateWebhookBody            = api.RESTPatchUpdateWebhookBody
+	RESTDeleteWebhookData                 = api.RESTDeleteWebhookData
+	RESTGetListWebhookLogsQueryParams     = api.RESTGetListWebhookLogsQueryParams
+	RESTGetListWebhookLogsData            = api.RESTGetListWebhookLogsData
+	RESTGetListTemplatesQueryParams       = api.RESTGetListTemplatesQueryParams
+	RESTGetListTemplatesData              = api.RESTGetListTemplatesData
+	RESTGetTemplateQueryParams            = api.RESTGetTemplateQueryParams
+	RESTGetTemplateData                   = api.RESTGetTemplateData
+	RESTPostCreateTemplateData            = api.RESTPostCreateTemplateData
+	RESTPostCreateTemplateBody            = api.RESTPostCreateTemplateBody
+	RESTPatchUpdateTemplateData           = api.RESTPatchUpdateTemplateData
+	RESTPatchUpdateTemplateBody           = api.RESTPatchUpdateTemplateBody
+	RESTDeleteTemplateData                = api.RESTDeleteTemplateData
+	RESTPostSendMessageBody               = api.RESTPostSendMessageBody
+	RESTPostSendMessageData               = api.RESTPostSendMessageData
+	RESTPostSendBatchMessagesBody         = api.RESTPostSendBatchMessagesBody
+	RESTPostSendBatchMessagesData         = api.RESTPostSendBatchMessagesData
+	RESTPostCreateMessageBody             = api.RESTPostCreateMessageBody
+	RESTPostCreateMessageData             = api.RESTPostCreateMessageData
+	RESTPostCreateMessagesBatchBody       = api.RESTPostCreateMessagesBatchBody
+	RESTPostCreateMessagesBatchData       = api.RESTPostCreateMessagesBatchData
+	RESTPostCancelMessageBody             = api.RESTPostCancelMessageBody
+	RESTPostCancelMessageData             = api.RESTPostCancelMessageData
+	RESTGetMessageData                    = api.RESTGetMessageData
+	RESTGetListMessagesQueryParams        = api.RESTGetListMessagesQueryParams
+	RESTGetListMessagesData               = api.RESTGetListMessagesData
+	RESTPostSendOTPMessageBody            = api.RESTPostSendOTPMessageBody
+	RESTPostSendOTPMessageData            = api.RESTPostSendOTPMessageData
+	RESTPostVerifyOTPCodeBody             = api.RESTPostVerifyOTPCodeBody
+	RESTPostVerifyOTPCodeData             = api.RESTPostVerifyOTPCodeData
+	RESTPostCreateOTPBody                 = api.RESTPostCreateOTPBody
+	RESTPostCreateOTPData                 = api.RESTPostCreateOTPData
+	RESTPostVerifyOTPBody                 = api.RESTPostVerifyOTPBody
+	RESTPostVerifyOTPData                 = api.RESTPostVerifyOTPData
+	RESTGetWebhookLogData                 = api.RESTGetWebhookLogData
+	RESTGetLogData                        = api.RESTGetLogData
+	RESTDeleteAPIKeyData                  = api.RESTDeleteAPIKeyData
 )
 
 // Nullable helper constructors.
@@ -211,6 +242,7 @@ const (
 
 // Webhook constants.
 const (
+	WebhookAllEvents                 = api.WebhookAllEvents
 	WebhookEventTypeSMSOTP           = api.WebhookEventTypeSMSOTP
 	WebhookEventTypeMessageSent      = api.WebhookEventTypeMessageSent
 	WebhookEventTypeMessageBatch     = api.WebhookEventTypeMessageBatch

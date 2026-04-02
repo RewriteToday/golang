@@ -95,6 +95,10 @@ func (r *MessageManager) Get(ctx context.Context, id string) (api.RESTGetMessage
 }
 
 func withIdempotencyKey(value string) *rest.FetchOptions {
+	if value == "" {
+		return nil
+	}
+
 	return &rest.FetchOptions{
 		Headers: map[string]string{
 			"Idempotency-Key": value,

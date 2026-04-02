@@ -220,15 +220,46 @@ type APITemplateVariable struct {
 	Fallback string `json:"fallback,omitempty"`
 }
 
+// APIContact represents a stored contact.
+type APIContact struct {
+	ID        Snowflake      `json:"id"`
+	CreatedAt string         `json:"createdAt"`
+	UpdatedAt string         `json:"updatedAt"`
+	Name      *string        `json:"name"`
+	Phone     string         `json:"phone"`
+	Country   CountryCode    `json:"country"`
+	Channel   *MessageType   `json:"channel"`
+	Tags      map[string]any `json:"tags"`
+}
+
+// APICreatedContact represents the contact payload returned by POST /contacts.
+type APICreatedContact struct {
+	ID        Snowflake   `json:"id"`
+	Phone     string      `json:"phone"`
+	Country   CountryCode `json:"country"`
+	CreatedAt string      `json:"createdAt"`
+}
+
+// APISegment represents a stored segment.
+type APISegment struct {
+	ID            Snowflake `json:"id"`
+	CreatedAt     string    `json:"createdAt"`
+	UpdatedAt     string    `json:"updatedAt"`
+	Name          string    `json:"name"`
+	Color         *string   `json:"color"`
+	Description   *string   `json:"description"`
+	ContactsCount int       `json:"contactsCount"`
+}
+
 // APITemplate represents a message template.
 type APITemplate struct {
 	ID          Snowflake              `json:"id"`
 	Name        string                 `json:"name"`
-	ProjectID   Snowflake              `json:"projectId,omitempty"`
-	I18N        map[CountryCode]string `json:"i18n,omitempty"`
 	Content     string                 `json:"content"`
+	Description *string                `json:"description"`
+	I18N        map[CountryCode]string `json:"i18n,omitempty"`
 	Variables   []APITemplateVariable  `json:"variables"`
-	Description *string                `json:"description,omitempty"`
+	Tags        []APITemplateTag       `json:"tags"`
 	CreatedAt   string                 `json:"createdAt"`
 }
 
@@ -238,16 +269,49 @@ type APICreatedTemplate struct {
 	CreatedAt string    `json:"createdAt"`
 }
 
+// APITemplateTag represents a static template tag.
+type APITemplateTag struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+// WebhookEventSelection is the selector accepted by webhook create/update endpoints.
+type WebhookEventSelection = string
+
+const (
+	// WebhookAllEvents subscribes a webhook to every supported event.
+	WebhookAllEvents WebhookEventSelection = "*"
+)
+
+// APIWebhookDelivery represents delivery settings persisted on a webhook.
+type APIWebhookDelivery struct {
+	Timeout int `json:"timeout"`
+	Retries int `json:"retries"`
+}
+
 // APIWebhook represents a webhook endpoint configuration.
 type APIWebhook struct {
-	ID        Snowflake          `json:"id"`
-	Name      string             `json:"name"`
-	Secret    string             `json:"secret,omitempty"`
-	Endpoint  string             `json:"endpoint"`
-	Events    []WebhookEventType `json:"events"`
-	Status    WebhookStatus      `json:"status"`
-	ProjectID Snowflake          `json:"projectId,omitempty"`
-	CreatedAt string             `json:"createdAt"`
+	ID        Snowflake               `json:"id"`
+	Name      *string                 `json:"name"`
+	Secret    string                  `json:"secret"`
+	Endpoint  string                  `json:"endpoint"`
+	Events    []WebhookEventSelection `json:"events"`
+	Status    WebhookStatus           `json:"status"`
+	Timeout   int                     `json:"timeout"`
+	Retries   int                     `json:"retries"`
+	CreatedAt string                  `json:"createdAt"`
+}
+
+// APIWebhookSummary represents a webhook list item.
+type APIWebhookSummary struct {
+	ID        Snowflake               `json:"id"`
+	Name      *string                 `json:"name"`
+	Endpoint  string                  `json:"endpoint"`
+	Events    []WebhookEventSelection `json:"events"`
+	Status    WebhookStatus           `json:"status"`
+	Timeout   int                     `json:"timeout"`
+	Retries   int                     `json:"retries"`
+	CreatedAt string                  `json:"createdAt"`
 }
 
 // APICreatedWebhook represents the create-webhook response payload.
@@ -272,10 +336,10 @@ type APIMessageSegmentationOptions struct {
 
 // APIMessageAnalysisSegments describes the calculated segment usage.
 type APIMessageAnalysisSegments struct {
-	Concat int                   `json:"concat"`
 	Count  int                   `json:"count"`
-	Reason MessageAnalysisReason `json:"reason"`
 	Single int                   `json:"single"`
+	Concat int                   `json:"concat"`
+	Reason MessageAnalysisReason `json:"reason"`
 }
 
 // APIMessageAnalysis describes the calculated message metrics.
@@ -285,51 +349,58 @@ type APIMessageAnalysis struct {
 	Segments   APIMessageAnalysisSegments `json:"segments"`
 }
 
-// APIMessageError describes a provider-side error.
-type APIMessageError struct {
+// MessageError describes a provider-side error.
+type MessageError struct {
 	Code    any    `json:"code,omitempty"`
 	Message string `json:"message"`
 }
 
+// APIMessageError is kept as a compatibility alias for MessageError.
+type APIMessageError = MessageError
+
 // APIMessage represents a persisted message read model.
 type APIMessage struct {
 	ID           Snowflake          `json:"id"`
-	CreatedAt    Snowflake          `json:"createdAt"`
+	CreatedAt    string             `json:"createdAt"`
 	Analysis     APIMessageAnalysis `json:"analysis"`
 	To           string             `json:"to"`
+	From         *Snowflake         `json:"from"`
+	ContactID    *Snowflake         `json:"contactId"`
 	Type         MessageType        `json:"type"`
 	Tags         []APIMessageTag    `json:"tags"`
 	Status       MessageStatus      `json:"status"`
 	Country      CountryCode        `json:"country"`
 	Content      string             `json:"content"`
 	Encoding     MessageEncoding    `json:"encoding"`
-	TemplateID   *Snowflake         `json:"templateId,omitempty"`
-	DeliveredAt  *string            `json:"deliveredAt,omitempty"`
-	ScheduledAt  *string            `json:"scheduledAt,omitempty"`
+	TemplateID   *Snowflake         `json:"templateId"`
+	DeliveredAt  *string            `json:"deliveredAt"`
+	ScheduledAt  *string            `json:"scheduledAt"`
 	IsPayAsYouGo bool               `json:"isPayAsYouGo"`
 }
 
-// APIMessageWithoutAnalysis is the read model returned by the Node SDK for GET/LIST message endpoints.
+// APIMessageWithoutAnalysis is the read model returned by message GET/LIST endpoints.
 type APIMessageWithoutAnalysis struct {
 	ID           Snowflake       `json:"id"`
-	CreatedAt    Snowflake       `json:"createdAt"`
+	CreatedAt    string          `json:"createdAt"`
 	To           string          `json:"to"`
+	From         *Snowflake      `json:"from"`
+	ContactID    *Snowflake      `json:"contactId"`
 	Type         MessageType     `json:"type"`
 	Tags         []APIMessageTag `json:"tags"`
 	Status       MessageStatus   `json:"status"`
 	Country      CountryCode     `json:"country"`
 	Content      string          `json:"content"`
 	Encoding     MessageEncoding `json:"encoding"`
-	TemplateID   *Snowflake      `json:"templateId,omitempty"`
-	DeliveredAt  *string         `json:"deliveredAt,omitempty"`
-	ScheduledAt  *string         `json:"scheduledAt,omitempty"`
+	TemplateID   *Snowflake      `json:"templateId"`
+	DeliveredAt  *string         `json:"deliveredAt"`
+	ScheduledAt  *string         `json:"scheduledAt"`
 	IsPayAsYouGo bool            `json:"isPayAsYouGo"`
 }
 
 // APICreatedMessage represents the send-message response payload.
 type APICreatedMessage struct {
 	ID        Snowflake          `json:"id"`
-	CreatedAt Snowflake          `json:"createdAt"`
+	CreatedAt string             `json:"createdAt"`
 	Analysis  APIMessageAnalysis `json:"analysis"`
 }
 
@@ -346,36 +417,60 @@ type APIOTPMessage struct {
 type APIOTPVerification struct {
 	ID         Snowflake `json:"id"`
 	Valid      bool      `json:"valid"`
-	VerifiedAt *string   `json:"verifiedAt"`
+	VerifiedAt string    `json:"verifiedAt"`
 }
 
-// APIWebhookOTPMetadata carries OTP metadata included in webhook payloads.
-type APIWebhookOTPMetadata struct {
-	ExpiresIn int    `json:"expiresIn"`
-	ExpiresAt string `json:"expiresAt"`
+// WebhookOTPMetadata carries OTP metadata included in webhook payloads.
+type WebhookOTPMetadata struct {
 	Prefix    string `json:"prefix"`
+	ExpiresAt string `json:"expiresAt"`
+	ExpiresIn int    `json:"expiresIn"`
 }
 
-// APIWebhookEventData represents the message or batch payload embedded in webhook deliveries.
+// APIWebhookOTPMetadata is kept as a compatibility alias.
+type APIWebhookOTPMetadata = WebhookOTPMetadata
+
+// WebhookMessagePayload represents the message payload embedded in webhook deliveries.
+type WebhookMessagePayload struct {
+	ID          Snowflake          `json:"id"`
+	ProjectID   Snowflake          `json:"projectId"`
+	To          string             `json:"to"`
+	Contact     *string            `json:"contact"`
+	ContactID   *Snowflake         `json:"contactId"`
+	Tags        []APIMessageTag    `json:"tags"`
+	Type        MessageType        `json:"type"`
+	Status      MessageStatus      `json:"status"`
+	Country     CountryCode        `json:"country"`
+	Content     string             `json:"content"`
+	Analysis    APIMessageAnalysis `json:"analysis"`
+	TemplateID  *Snowflake         `json:"templateId"`
+	ScheduledAt *string            `json:"scheduledAt"`
+	DeliveredAt *string            `json:"deliveredAt"`
+	Error       *MessageError      `json:"error"`
+}
+
+// APIWebhookEventData is kept as a compatibility shape for broad webhook payload handling.
 type APIWebhookEventData struct {
-	ID          Snowflake              `json:"id,omitempty"`
-	IDs         []Snowflake            `json:"ids,omitempty"`
-	ProjectID   Snowflake              `json:"projectId"`
-	Analysis    *APIMessageAnalysis    `json:"analysis,omitempty"`
-	Content     string                 `json:"content,omitempty"`
-	Country     CountryCode            `json:"country,omitempty"`
-	DeliveredAt *string                `json:"deliveredAt,omitempty"`
-	Error       *APIMessageError       `json:"error,omitempty"`
-	OTP         *APIWebhookOTPMetadata `json:"otp,omitempty"`
-	ScheduledAt *string                `json:"scheduledAt,omitempty"`
-	Status      MessageStatus          `json:"status,omitempty"`
-	Tags        []APIMessageTag        `json:"tags,omitempty"`
-	TemplateID  *Snowflake             `json:"templateId,omitempty"`
-	To          string                 `json:"to,omitempty"`
-	Type        MessageType            `json:"type,omitempty"`
+	ID          Snowflake           `json:"id,omitempty"`
+	IDs         []Snowflake         `json:"ids,omitempty"`
+	ProjectID   Snowflake           `json:"projectId"`
+	To          string              `json:"to,omitempty"`
+	Contact     *string             `json:"contact,omitempty"`
+	ContactID   *Snowflake          `json:"contactId,omitempty"`
+	Tags        []APIMessageTag     `json:"tags,omitempty"`
+	Type        MessageType         `json:"type,omitempty"`
+	Status      MessageStatus       `json:"status,omitempty"`
+	Country     CountryCode         `json:"country,omitempty"`
+	Content     string              `json:"content,omitempty"`
+	Analysis    *APIMessageAnalysis `json:"analysis,omitempty"`
+	TemplateID  *Snowflake          `json:"templateId,omitempty"`
+	ScheduledAt *string             `json:"scheduledAt,omitempty"`
+	DeliveredAt *string             `json:"deliveredAt,omitempty"`
+	Error       *MessageError       `json:"error,omitempty"`
+	OTP         *WebhookOTPMetadata `json:"otp,omitempty"`
 }
 
-// APIWebhookEvent represents the stored webhook event payload.
+// APIWebhookEvent represents a webhook event payload.
 type APIWebhookEvent struct {
 	ID        Snowflake           `json:"id"`
 	CreatedAt string              `json:"createdAt"`
@@ -387,44 +482,41 @@ type APIWebhookEvent struct {
 type APIWebhookLog struct {
 	ID        Snowflake             `json:"id"`
 	CreatedAt string                `json:"createdAt"`
-	WebhookID *Snowflake            `json:"webhookId,omitempty"`
-	MessageID *Snowflake            `json:"messageId,omitempty"`
+	WebhookID *Snowflake            `json:"webhookId"`
+	MessageID *Snowflake            `json:"messageId"`
 	Type      WebhookEventType      `json:"type"`
-	Error     *string               `json:"error,omitempty"`
+	Error     *string               `json:"error"`
 	Status    WebhookDeliveryStatus `json:"status"`
 	URL       string                `json:"url"`
-	Code      *int                  `json:"code,omitempty"`
-	Payload   any                   `json:"payload,omitempty"`
+	Code      *int                  `json:"code"`
+	Payload   map[string]any        `json:"payload"`
 	Attempt   int                   `json:"attempt"`
-	Latency   *int                  `json:"latency,omitempty"`
-	RetryAt   *string               `json:"retryAt,omitempty"`
+	Latency   *int                  `json:"latency"`
+	RetryAt   *string               `json:"retryAt"`
 }
 
-// APIWebhookLogListItem matches the list item shape exposed through @rewritetoday/types for webhook logs.
-type APIWebhookLogListItem struct {
+// APIWebhookLogSummary matches the list item shape returned by GET /webhooks/:id/logs.
+type APIWebhookLogSummary struct {
 	ID        Snowflake             `json:"id"`
 	CreatedAt string                `json:"createdAt"`
-	WebhookID *Snowflake            `json:"webhookId,omitempty"`
-	MessageID *Snowflake            `json:"messageId,omitempty"`
+	MessageID *Snowflake            `json:"messageId"`
 	Type      WebhookEventType      `json:"type"`
-	Error     *string               `json:"error,omitempty"`
+	Error     *string               `json:"error"`
 	Status    WebhookDeliveryStatus `json:"status"`
 	URL       string                `json:"url"`
-	Code      *int                  `json:"code,omitempty"`
+	Code      *int                  `json:"code"`
 	Attempt   int                   `json:"attempt"`
-	Latency   *int                  `json:"latency,omitempty"`
-	RetryAt   *string               `json:"retryAt,omitempty"`
+	Latency   *int                  `json:"latency"`
+	RetryAt   *string               `json:"retryAt"`
 }
+
+// APIWebhookLogListItem is kept as a compatibility alias.
+type APIWebhookLogListItem = APIWebhookLogSummary
 
 // APIWebhookLogList is kept for compatibility with older exports.
 type APIWebhookLogList struct {
-	Data   []APIWebhookLog `json:"data"`
-	Cursor *Cursor         `json:"cursor,omitempty"`
-}
-
-// APIHealth represents the public health payload.
-type APIHealth struct {
-	Uptime int `json:"uptime"`
+	Data   []APIWebhookLogSummary `json:"data"`
+	Cursor *Cursor                `json:"cursor,omitempty"`
 }
 
 // RESTCursorOptions configures cursor-based pagination.
@@ -443,11 +535,91 @@ type RESTPatchUpdateProjectBody struct {
 // RESTPatchUpdateProjectData corresponds to PATCH /projects.
 type RESTPatchUpdateProjectData = APIResponse[any]
 
-// RESTGetHealthData corresponds to GET /health.
-type RESTGetHealthData = APIResponse[APIHealth]
+// RESTGetContactData corresponds to GET /contacts/:identifier.
+type RESTGetContactData = APIResponse[APIContact]
+
+// RESTGetListContactsData corresponds to GET /contacts.
+type RESTGetListContactsData = APIResponse[[]APIContact]
+
+// RESTGetListContactsQueryParams corresponds to contact list query params.
+type RESTGetListContactsQueryParams = RESTCursorOptions
+
+// RESTPostCreateContactData corresponds to POST /contacts.
+type RESTPostCreateContactData = APIResponse[APICreatedContact]
+
+// RESTPostCreateContactBody is the request body for contact creation.
+type RESTPostCreateContactBody struct {
+	Phone   string         `json:"phone"`
+	Name    string         `json:"name,omitempty"`
+	Channel MessageType    `json:"channel,omitempty"`
+	Tags    map[string]any `json:"tags,omitempty"`
+}
+
+// RESTPatchUpdateContactData corresponds to PATCH /contacts/:id.
+type RESTPatchUpdateContactData = APIResponse[any]
+
+// RESTPatchUpdateContactBody is the request body for contact updates.
+type RESTPatchUpdateContactBody struct {
+	Phone   string         `json:"phone,omitempty"`
+	Name    string         `json:"name,omitempty"`
+	Channel MessageType    `json:"channel,omitempty"`
+	Tags    map[string]any `json:"tags,omitempty"`
+}
+
+// RESTDeleteContactData corresponds to DELETE /contacts/:id.
+type RESTDeleteContactData = APIResponse[any]
+
+// RESTGetSegmentData corresponds to GET /segments/:id.
+type RESTGetSegmentData = APIResponse[APISegment]
+
+// RESTGetListSegmentsData corresponds to GET /segments.
+type RESTGetListSegmentsData = APIResponse[[]APISegment]
+
+// RESTGetListSegmentsQueryParams corresponds to segment list query params.
+type RESTGetListSegmentsQueryParams = RESTCursorOptions
+
+// RESTPostCreateSegmentData corresponds to POST /segments.
+type RESTPostCreateSegmentData = APIResponse[APISegment]
+
+// RESTPostCreateSegmentBody is the request body for segment creation.
+type RESTPostCreateSegmentBody struct {
+	Name        string         `json:"name"`
+	Color       NullableString `json:"color,omitempty"`
+	Description NullableString `json:"description,omitempty"`
+}
+
+// RESTPatchUpdateSegmentData corresponds to PATCH /segments/:id.
+type RESTPatchUpdateSegmentData = APIResponse[any]
+
+// RESTPatchUpdateSegmentBody is the request body for segment updates.
+type RESTPatchUpdateSegmentBody struct {
+	Name        string         `json:"name,omitempty"`
+	Color       NullableString `json:"color,omitempty"`
+	Description NullableString `json:"description,omitempty"`
+}
+
+// RESTDeleteSegmentData corresponds to DELETE /segments/:id.
+type RESTDeleteSegmentData = APIResponse[any]
+
+// RESTGetListSegmentContactsData corresponds to GET /segments/:id/contacts.
+type RESTGetListSegmentContactsData = APIResponse[[]APIContact]
+
+// RESTGetListSegmentContactsQueryParams corresponds to segment contact list query params.
+type RESTGetListSegmentContactsQueryParams = RESTCursorOptions
+
+// RESTPostAttachSegmentContactBody is the request body for POST /segments/:id/contacts.
+type RESTPostAttachSegmentContactBody struct {
+	ContactID Snowflake `json:"contactId"`
+}
+
+// RESTPostAttachSegmentContactData corresponds to POST /segments/:id/contacts.
+type RESTPostAttachSegmentContactData = APIResponse[any]
+
+// RESTDeleteDetachSegmentContactData corresponds to DELETE /segments/:id/contacts/:contactId.
+type RESTDeleteDetachSegmentContactData = APIResponse[any]
 
 // RESTGetListWebhooksData corresponds to GET /webhooks.
-type RESTGetListWebhooksData = APIResponse[[]APIWebhook]
+type RESTGetListWebhooksData = APIResponse[[]APIWebhookSummary]
 
 // RESTGetListWebhooksQueryParams corresponds to webhook list query params.
 type RESTGetListWebhooksQueryParams = RESTCursorOptions
@@ -458,24 +630,32 @@ type RESTGetWebhookData = APIResponse[APIWebhook]
 // RESTPostCreateWebhookData corresponds to POST /webhooks.
 type RESTPostCreateWebhookData = APIResponse[APICreatedWebhook]
 
+// RESTWebhookDeliveryBody is the partial delivery config accepted by webhook create/update endpoints.
+type RESTWebhookDeliveryBody struct {
+	Timeout *int `json:"timeout,omitempty"`
+	Retries *int `json:"retries,omitempty"`
+}
+
 // RESTPostCreateWebhookBody is the request body for webhook creation.
 type RESTPostCreateWebhookBody struct {
-	Name     string             `json:"name,omitempty"`
-	Endpoint string             `json:"endpoint"`
-	Events   []WebhookEventType `json:"events"`
-	Secret   string             `json:"secret,omitempty"`
+	Name     string                   `json:"name,omitempty"`
+	Endpoint string                   `json:"endpoint"`
+	Events   []WebhookEventSelection  `json:"events"`
+	Secret   string                   `json:"secret,omitempty"`
+	Delivery *RESTWebhookDeliveryBody `json:"delivery,omitempty"`
 }
 
 // RESTPatchUpdateWebhookData corresponds to PATCH /webhooks/:id.
-type RESTPatchUpdateWebhookData = APIResponse[APIWebhook]
+type RESTPatchUpdateWebhookData = APIResponse[any]
 
 // RESTPatchUpdateWebhookBody is the request body for webhook updates.
 type RESTPatchUpdateWebhookBody struct {
-	Name     NullableString     `json:"name,omitempty"`
-	Endpoint string             `json:"endpoint,omitempty"`
-	Events   []WebhookEventType `json:"events,omitempty"`
-	Secret   string             `json:"secret,omitempty"`
-	Status   WebhookStatus      `json:"status,omitempty"`
+	Name     NullableString           `json:"name,omitempty"`
+	Endpoint string                   `json:"endpoint,omitempty"`
+	Events   []WebhookEventSelection  `json:"events,omitempty"`
+	Secret   string                   `json:"secret,omitempty"`
+	Status   WebhookStatus            `json:"status,omitempty"`
+	Delivery *RESTWebhookDeliveryBody `json:"delivery,omitempty"`
 }
 
 // RESTDeleteWebhookData corresponds to DELETE /webhooks/:id.
@@ -492,30 +672,32 @@ type RESTDeleteWebhooksData = APIResponse[[]Snowflake]
 // RESTGetListWebhookLogsQueryParams corresponds to webhook log list query params.
 type RESTGetListWebhookLogsQueryParams struct {
 	RESTCursorOptions
-	Type   WebhookEventType `json:"type,omitempty"`
-	Status WebhookStatus    `json:"status,omitempty"`
+	Type   WebhookEventType      `json:"type,omitempty"`
+	Status WebhookDeliveryStatus `json:"status,omitempty"`
 }
 
 // RESTGetListWebhookLogsData corresponds to GET /webhooks/:id/logs.
-type RESTGetListWebhookLogsData = APIResponse[[]APIWebhookLogListItem]
+type RESTGetListWebhookLogsData = APIResponse[[]APIWebhookLogSummary]
 
 // RESTGetListTemplatesQueryParams corresponds to template list query params.
 type RESTGetListTemplatesQueryParams struct {
 	RESTCursorOptions
-	With18n  *bool `json:"with18n,omitempty"`
+	WithI18n *bool `json:"withi18n,omitempty"`
+	With18n  *bool `json:"-"`
 	WithI18N *bool `json:"-"`
 }
 
 // RESTGetListTemplatesData corresponds to GET /templates.
 type RESTGetListTemplatesData = APIResponse[[]APITemplate]
 
-// RESTGetTemplateQueryParams is kept for compatibility with older exports.
+// RESTGetTemplateQueryParams corresponds to GET /templates/:identifier query params.
 type RESTGetTemplateQueryParams struct {
-	With18n  *bool `json:"with18n,omitempty"`
+	WithI18n *bool `json:"withi18n,omitempty"`
+	With18n  *bool `json:"-"`
 	WithI18N *bool `json:"-"`
 }
 
-// RESTGetTemplateData corresponds to GET /templates/:id.
+// RESTGetTemplateData corresponds to GET /templates/:identifier.
 type RESTGetTemplateData = APIResponse[APITemplate]
 
 // RESTPostCreateTemplateData corresponds to POST /templates.
@@ -523,11 +705,11 @@ type RESTPostCreateTemplateData = APIResponse[APICreatedTemplate]
 
 // RESTPostCreateTemplateBody is the request body for template creation.
 type RESTPostCreateTemplateBody struct {
-	Name        string                 `json:"name"`
-	I18N        map[CountryCode]string `json:"i18n,omitempty"`
-	Content     string                 `json:"content"`
-	Variables   []APITemplateVariable  `json:"variables"`
-	Description string                 `json:"description,omitempty"`
+	Name        string                `json:"name"`
+	Content     string                `json:"content"`
+	Variables   []APITemplateVariable `json:"variables"`
+	Description NullableString        `json:"description,omitempty"`
+	Tags        []APITemplateTag      `json:"tags,omitempty"`
 }
 
 // RESTPatchUpdateTemplateData corresponds to PATCH /templates/:id.
@@ -535,10 +717,10 @@ type RESTPatchUpdateTemplateData = APIResponse[any]
 
 // RESTPatchUpdateTemplateBody is the request body for template updates.
 type RESTPatchUpdateTemplateBody struct {
-	I18N        map[CountryCode]string `json:"i18n,omitempty"`
-	Content     string                 `json:"content,omitempty"`
-	Variables   []APITemplateVariable  `json:"variables,omitempty"`
-	Description string                 `json:"description,omitempty"`
+	Content     string                `json:"content,omitempty"`
+	Variables   []APITemplateVariable `json:"variables,omitempty"`
+	Description NullableString        `json:"description,omitempty"`
+	Tags        []APITemplateTag      `json:"tags,omitempty"`
 }
 
 // RESTDeleteTemplateData corresponds to DELETE /templates/:id.
@@ -554,7 +736,8 @@ type RESTDeleteTemplatesData = APIResponse[[]Snowflake]
 
 // RESTPostSendMessageBody is the request body for message sending.
 type RESTPostSendMessageBody struct {
-	To           string                         `json:"to"`
+	To           string                         `json:"to,omitempty"`
+	Contact      string                         `json:"contact,omitempty"`
 	Tags         []APIMessageTag                `json:"tags,omitempty"`
 	ScheduledAt  string                         `json:"scheduledAt,omitempty"`
 	Segmentation *APIMessageSegmentationOptions `json:"segmentation,omitempty"`
@@ -569,13 +752,13 @@ type RESTPostSendMessageData = APIResponse[APICreatedMessage]
 // RESTPostSendBatchMessagesBody is the request body for POST /messages/batch.
 type RESTPostSendBatchMessagesBody []RESTPostSendMessageBody
 
-// APIBatchMessagesResult is the response payload for POST /messages/batch.
+// APIBatchMessagesResult is kept for compatibility with older SDK versions.
 type APIBatchMessagesResult struct {
 	IDs []Snowflake `json:"ids"`
 }
 
 // RESTPostSendBatchMessagesData corresponds to POST /messages/batch.
-type RESTPostSendBatchMessagesData = APIResponse[APIBatchMessagesResult]
+type RESTPostSendBatchMessagesData = APIResponse[[]APICreatedMessage]
 
 // RESTPostCancelMessageBody is kept for compatibility with older SDK versions.
 type RESTPostCancelMessageBody struct {
@@ -656,9 +839,12 @@ type RESTPostVerifyOTPBody = RESTPostVerifyOTPCodeBody
 type RESTPostVerifyOTPData = RESTPostVerifyOTPCodeData
 type RESTGetLogData = RESTGetWebhookLogData
 
-func (q *RESTGetListTemplatesQueryParams) with18n() *bool {
+func (q *RESTGetListTemplatesQueryParams) withI18n() *bool {
 	if q == nil {
 		return nil
+	}
+	if q.WithI18n != nil {
+		return q.WithI18n
 	}
 	if q.With18n != nil {
 		return q.With18n
@@ -666,9 +852,12 @@ func (q *RESTGetListTemplatesQueryParams) with18n() *bool {
 	return q.WithI18N
 }
 
-func (q *RESTGetTemplateQueryParams) with18n() *bool {
+func (q *RESTGetTemplateQueryParams) withI18n() *bool {
 	if q == nil {
 		return nil
+	}
+	if q.WithI18n != nil {
+		return q.WithI18n
 	}
 	if q.With18n != nil {
 		return q.With18n

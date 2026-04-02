@@ -18,6 +18,9 @@ type Client struct {
 	// APIKeys exposes public API key operations.
 	APIKeys *resources.APIKeyManager
 
+	// Contacts exposes contact operations.
+	Contacts *resources.ContactManager
+
 	// Logs exposes webhook delivery log operations.
 	Logs *resources.LogManager
 
@@ -26,6 +29,9 @@ type Client struct {
 
 	// OTP exposes OTP operations.
 	OTP *resources.OTPManager
+
+	// Segments exposes segment operations.
+	Segments *resources.SegmentManager
 
 	// Templates exposes template operations.
 	Templates *resources.TemplateManager
@@ -79,9 +85,11 @@ func New(options any) (*Client, error) {
 		Rest:      restClient,
 		secret:    resolved.Secret,
 		APIKeys:   &resources.APIKeyManager{Base: resources.Base{Rest: restClient}},
+		Contacts:  &resources.ContactManager{Base: resources.Base{Rest: restClient}},
 		Logs:      &resources.LogManager{Base: resources.Base{Rest: restClient}},
 		Messages:  &resources.MessageManager{Base: resources.Base{Rest: restClient}},
 		OTP:       &resources.OTPManager{Base: resources.Base{Rest: restClient}},
+		Segments:  &resources.SegmentManager{Base: resources.Base{Rest: restClient}},
 		Templates: &resources.TemplateManager{Base: resources.Base{Rest: restClient}},
 		Webhooks:  &resources.WebhookManager{Base: resources.Base{Rest: restClient}},
 	}

@@ -62,6 +62,9 @@ func TestNewFromOptionsAndTemplatesList(t *testing.T) {
 	if templates.Cursor == nil || templates.Cursor.Persist {
 		t.Fatalf("unexpected cursor: %+v", templates.Cursor)
 	}
+	if client.Contacts == nil || client.Segments == nil {
+		t.Fatalf("expected contacts and segments managers to be initialized")
+	}
 }
 
 func TestConstructorSecretTypeError(t *testing.T) {
@@ -75,9 +78,9 @@ func TestRoutesMatchPublicAPI(t *testing.T) {
 	if route := Routes.Templates.List(nil); route != "/templates?limit=15" {
 		t.Fatalf("unexpected templates list route: %s", route)
 	}
-	with18n := true
-	if route := Routes.Templates.List(&RESTGetListTemplatesQueryParams{With18n: &with18n}); route != "/templates?limit=15&with18n=true" {
-		t.Fatalf("unexpected templates list route with with18n: %s", route)
+	withI18n := true
+	if route := Routes.Templates.List(&RESTGetListTemplatesQueryParams{WithI18n: &withI18n}); route != "/templates?limit=15&withi18n=true" {
+		t.Fatalf("unexpected templates list route with withi18n: %s", route)
 	}
 	if route := Routes.Messages.List(nil); route != "/messages?limit=15" {
 		t.Fatalf("unexpected messages list route: %s", route)
@@ -85,11 +88,26 @@ func TestRoutesMatchPublicAPI(t *testing.T) {
 	if route := Routes.Messages.Send(); route != "/messages" {
 		t.Fatalf("unexpected message send route: %s", route)
 	}
-	if route := Routes.Messages.Get("abc"); route != "/messages/:abc" {
+	if route := Routes.Messages.Get("abc"); route != "/messages/abc" {
 		t.Fatalf("unexpected message get route: %s", route)
 	}
 	if route := Routes.Messages.Cancel("abc"); route != "/messages/abc/cancel" {
 		t.Fatalf("unexpected message cancel route: %s", route)
+	}
+	if route := Routes.Contacts.List(nil); route != "/contacts?limit=15" {
+		t.Fatalf("unexpected contacts list route: %s", route)
+	}
+	if route := Routes.Contacts.Get("abc"); route != "/contacts/abc" {
+		t.Fatalf("unexpected contacts get route: %s", route)
+	}
+	if route := Routes.Segments.List(nil); route != "/segments?limit=15" {
+		t.Fatalf("unexpected segments list route: %s", route)
+	}
+	if route := Routes.Segments.Contacts.List("abc", nil); route != "/segments/abc/contacts?limit=15" {
+		t.Fatalf("unexpected segment contacts route: %s", route)
+	}
+	if route := Routes.Templates.Get("abc", &RESTGetTemplateQueryParams{WithI18n: &withI18n}); route != "/templates/abc?withi18n=true" {
+		t.Fatalf("unexpected template get route with withi18n: %s", route)
 	}
 	if route := Routes.Webhooks.Logs("abc", nil); route != "/webhooks/abc/logs?limit=15" {
 		t.Fatalf("unexpected webhook logs route: %s", route)
@@ -121,13 +139,13 @@ func TestTemplatesCreateDoesNotSendHiddenFields(t *testing.T) {
 
 	_, err = client.Templates.Create(context.Background(), RESTPostCreateTemplateBody{
 		Name:        "welcome",
-		Description: "Welcome message",
+		Description: NewNullableString("Welcome message"),
 		Content:     "Hello {{name}}",
-		I18N: map[CountryCode]string{
-			"br": "Ola {{name}}",
-		},
 		Variables: []APITemplateVariable{
 			{Name: "name", Fallback: "customer"},
+		},
+		Tags: []APITemplateTag{
+			{Name: "category", Value: "welcome"},
 		},
 	})
 	if err != nil {
@@ -143,9 +161,12 @@ func TestTemplatesCreateDoesNotSendHiddenFields(t *testing.T) {
 	if payload["description"] != "Welcome message" {
 		t.Fatalf("unexpected description in body: %#v", payload["description"])
 	}
+	if _, ok := payload["i18n"]; ok {
+		t.Fatalf("did not expect i18n in body: %#v", payload["i18n"])
+	}
 }
 
-func TestTemplatesListSupportsNodeAndLegacyWith18nFields(t *testing.T) {
+func TestTemplatesListSupportsCurrentAndLegacyI18nFields(t *testing.T) {
 	var requestQuery string
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -160,27 +181,36 @@ func TestTemplatesListSupportsNodeAndLegacyWith18nFields(t *testing.T) {
 		t.Fatalf("unexpected constructor error: %v", err)
 	}
 
-	with18n := true
+	withI18n := true
 	if _, err := client.Templates.List(context.Background(), &RESTGetListTemplatesQueryParams{
-		With18n: &with18n,
+		WithI18n: &withI18n,
 	}); err != nil {
 		t.Fatalf("unexpected list error: %v", err)
 	}
-	if requestQuery != "limit=15&with18n=true" {
-		t.Fatalf("unexpected node query: %q", requestQuery)
+	if requestQuery != "limit=15&withi18n=true" {
+		t.Fatalf("unexpected current query: %q", requestQuery)
 	}
 
 	if _, err := client.Templates.List(context.Background(), &RESTGetListTemplatesQueryParams{
-		WithI18N: &with18n,
+		With18n: &withI18n,
 	}); err != nil {
 		t.Fatalf("unexpected legacy list error: %v", err)
 	}
-	if requestQuery != "limit=15&with18n=true" {
-		t.Fatalf("unexpected legacy query: %q", requestQuery)
+	if requestQuery != "limit=15&withi18n=true" {
+		t.Fatalf("unexpected legacy with18n query: %q", requestQuery)
+	}
+
+	if _, err := client.Templates.List(context.Background(), &RESTGetListTemplatesQueryParams{
+		WithI18N: &withI18n,
+	}); err != nil {
+		t.Fatalf("unexpected legacy i18n list error: %v", err)
+	}
+	if requestQuery != "limit=15&withi18n=true" {
+		t.Fatalf("unexpected legacy i18n query: %q", requestQuery)
 	}
 }
 
-func TestTemplatesUpdateUsesNodeContract(t *testing.T) {
+func TestTemplatesUpdateUsesCurrentContract(t *testing.T) {
 	var requestPath string
 	var payload map[string]any
 
@@ -190,7 +220,7 @@ func TestTemplatesUpdateUsesNodeContract(t *testing.T) {
 			t.Fatalf("decode body: %v", err)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"ok":true,"data":{"id":"1","createdAt":"2026-02-19T20:01:09.000Z"}}`))
+		_, _ = w.Write([]byte(`{"ok":true,"data":null}`))
 	}))
 	defer server.Close()
 
@@ -199,11 +229,13 @@ func TestTemplatesUpdateUsesNodeContract(t *testing.T) {
 		t.Fatalf("unexpected constructor error: %v", err)
 	}
 
-	response, err := client.Templates.Update(context.Background(), "tmpl_123", RESTPostCreateTemplateBody{
-		Name:    "welcome",
+	response, err := client.Templates.Update(context.Background(), "tmpl_123", RESTPatchUpdateTemplateBody{
 		Content: "Hello {{name}}",
 		Variables: []APITemplateVariable{
 			{Name: "name", Fallback: "friend"},
+		},
+		Tags: []APITemplateTag{
+			{Name: "category", Value: "transactional"},
 		},
 	})
 	if err != nil {
@@ -213,11 +245,43 @@ func TestTemplatesUpdateUsesNodeContract(t *testing.T) {
 	if requestPath != "/v1/templates/tmpl_123" {
 		t.Fatalf("unexpected path: %q", requestPath)
 	}
-	if payload["name"] != "welcome" {
-		t.Fatalf("unexpected payload: %#v", payload)
+	if _, ok := payload["name"]; ok {
+		t.Fatalf("did not expect name in patch payload: %#v", payload["name"])
 	}
-	if response.Data.ID != "1" {
+	if response.OK != true {
 		t.Fatalf("unexpected response: %+v", response)
+	}
+}
+
+func TestTemplatesGetSupportsQueryOptions(t *testing.T) {
+	var requestPath string
+	var requestQuery string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestPath = r.URL.Path
+		requestQuery = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"ok":true,"data":{"id":"1","name":"welcome","content":"Hello {{name}}","description":"Welcome copy","variables":[{"name":"name","fallback":"friend"}],"tags":[{"name":"category","value":"welcome"}],"createdAt":"2026-02-19T20:01:09.000Z"}}`))
+	}))
+	defer server.Close()
+
+	client, err := New(RewriteOptions{Secret: "rw", Rest: &RESTOptions{BaseURL: server.URL}})
+	if err != nil {
+		t.Fatalf("unexpected constructor error: %v", err)
+	}
+
+	withI18n := true
+	if _, err := client.Templates.Get(context.Background(), "welcome", &RESTGetTemplateQueryParams{
+		WithI18n: &withI18n,
+	}); err != nil {
+		t.Fatalf("unexpected get error: %v", err)
+	}
+
+	if requestPath != "/v1/templates/welcome" {
+		t.Fatalf("unexpected path: %q", requestPath)
+	}
+	if requestQuery != "withi18n=true" {
+		t.Fatalf("unexpected query: %q", requestQuery)
 	}
 }
 
@@ -309,8 +373,37 @@ func TestMessagesGetUsesNodeRouteBuilder(t *testing.T) {
 		t.Fatalf("unexpected get error: %v", err)
 	}
 
-	if requestPath != "/v1/messages/:msg_123" {
+	if requestPath != "/v1/messages/msg_123" {
 		t.Fatalf("unexpected path: %q", requestPath)
+	}
+}
+
+func TestMessagesSendOmitsEmptyIdempotencyKey(t *testing.T) {
+	var idempotencyKey string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		idempotencyKey = r.Header.Get("Idempotency-Key")
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"ok":true,"data":{"id":"1","createdAt":"2026-02-19T20:01:09.000Z","analysis":{"characters":5,"encoding":"gsm7","segments":{"concat":153,"count":1,"reason":"fits","single":160}}}}`))
+	}))
+	defer server.Close()
+
+	client, err := New(RewriteOptions{Secret: "rw", Rest: &RESTOptions{BaseURL: server.URL}})
+	if err != nil {
+		t.Fatalf("unexpected constructor error: %v", err)
+	}
+
+	if _, err := client.Messages.Send(context.Background(), SendMessageOptions{
+		RESTPostSendMessageBody: RESTPostSendMessageBody{
+			To:      "+5511999999999",
+			Content: "hello",
+		},
+	}); err != nil {
+		t.Fatalf("unexpected send error: %v", err)
+	}
+
+	if idempotencyKey != "" {
+		t.Fatalf("unexpected idempotency key header: %q", idempotencyKey)
 	}
 }
 

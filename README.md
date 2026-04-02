@@ -100,14 +100,14 @@ func buildClient() (*rewrite.Client, error) {
 ```go
 created, err := client.Templates.Create(context.Background(), rewrite.RESTPostCreateTemplateBody{
 	Name:        "welcome_sms",
-	Description: "Welcome copy",
+	Description: rewrite.NewNullableString("Welcome copy"),
 	Content:     "Hi {{name}}, welcome to {{company}}.",
-	I18N: map[rewrite.CountryCode]string{
-		"br": "Oi {{name}}, bem-vindo a {{company}}.",
-	},
 	Variables: []rewrite.APITemplateVariable{
 		{Name: "name", Fallback: "customer"},
 		{Name: "company", Fallback: "Rewrite"},
+	},
+	Tags: []rewrite.APITemplateTag{
+		{Name: "category", Value: "welcome"},
 	},
 })
 
@@ -134,7 +134,7 @@ fmt.Printf("created=%+v templates=%+v\n", created, templates)
 hook, err := client.Webhooks.Create(context.Background(), rewrite.RESTPostCreateWebhookBody{
 	Name:     "delivery-events",
 	Endpoint: "https://example.com/webhooks/rewrite",
-	Events: []rewrite.WebhookEventType{
+	Events: []rewrite.WebhookEventSelection{
 		rewrite.WebhookEventTypeMessageDelivered,
 		rewrite.WebhookEventTypeMessageFailed,
 	},
@@ -216,6 +216,43 @@ if err != nil {
 }
 
 fmt.Printf("otp=%+v verified=%+v\n", otp, verified)
+```
+
+<div align="center">
+
+### Contacts And Segments
+
+</div>
+
+```go
+contact, err := client.Contacts.Create(context.Background(), rewrite.RESTPostCreateContactBody{
+	Phone: "+5511999999999",
+	Name:  "Ada Lovelace",
+	Tags: map[string]any{
+		"source": "landing-page",
+	},
+})
+
+if err != nil {
+	log.Fatal(err)
+}
+
+segment, err := client.Segments.Create(context.Background(), rewrite.RESTPostCreateSegmentBody{
+	Name:        "vip",
+	Description: rewrite.NewNullableString("Customers with priority handling"),
+})
+
+if err != nil {
+	log.Fatal(err)
+}
+
+_, err = client.Segments.AttachContact(context.Background(), string(segment.Data.ID), rewrite.RESTPostAttachSegmentContactBody{
+	ContactID: contact.Data.ID,
+})
+
+if err != nil {
+	log.Fatal(err)
+}
 ```
 
 <div align="center">
