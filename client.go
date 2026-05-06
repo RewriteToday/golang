@@ -21,7 +21,10 @@ type Client struct {
 	// Contacts exposes contact operations.
 	Contacts *resources.ContactManager
 
-	// Logs exposes webhook delivery log operations.
+	// Deliveries exposes webhook delivery operations.
+	Deliveries *resources.DeliveryManager
+
+	// Logs exposes request log operations.
 	Logs *resources.LogManager
 
 	// Messages exposes message operations.
@@ -33,11 +36,14 @@ type Client struct {
 	// Segments exposes segment operations.
 	Segments *resources.SegmentManager
 
+	// Tags exposes reusable tag operations.
+	Tags *resources.TagManager
+
 	// Templates exposes template operations.
 	Templates *resources.TemplateManager
 
-	// WebhookLogs is kept as a compatibility alias to Logs.
-	WebhookLogs *resources.LogManager
+	// WebhookLogs is kept as a compatibility alias to Deliveries.
+	WebhookLogs *resources.DeliveryManager
 
 	// Webhooks exposes webhook operations.
 	Webhooks *resources.WebhookManager
@@ -82,18 +88,20 @@ func New(options any) (*Client, error) {
 	}
 
 	client := &Client{
-		Rest:      restClient,
-		secret:    resolved.Secret,
-		APIKeys:   &resources.APIKeyManager{Base: resources.Base{Rest: restClient}},
-		Contacts:  &resources.ContactManager{Base: resources.Base{Rest: restClient}},
-		Logs:      &resources.LogManager{Base: resources.Base{Rest: restClient}},
-		Messages:  &resources.MessageManager{Base: resources.Base{Rest: restClient}},
-		OTP:       &resources.OTPManager{Base: resources.Base{Rest: restClient}},
-		Segments:  &resources.SegmentManager{Base: resources.Base{Rest: restClient}},
-		Templates: &resources.TemplateManager{Base: resources.Base{Rest: restClient}},
-		Webhooks:  &resources.WebhookManager{Base: resources.Base{Rest: restClient}},
+		Rest:       restClient,
+		secret:     resolved.Secret,
+		APIKeys:    &resources.APIKeyManager{Base: resources.Base{Rest: restClient}},
+		Contacts:   &resources.ContactManager{Base: resources.Base{Rest: restClient}},
+		Deliveries: &resources.DeliveryManager{Base: resources.Base{Rest: restClient}},
+		Logs:       &resources.LogManager{Base: resources.Base{Rest: restClient}},
+		Messages:   &resources.MessageManager{Base: resources.Base{Rest: restClient}},
+		OTP:        &resources.OTPManager{Base: resources.Base{Rest: restClient}},
+		Segments:   &resources.SegmentManager{Base: resources.Base{Rest: restClient}},
+		Tags:       &resources.TagManager{Base: resources.Base{Rest: restClient}},
+		Templates:  &resources.TemplateManager{Base: resources.Base{Rest: restClient}},
+		Webhooks:   &resources.WebhookManager{Base: resources.Base{Rest: restClient}},
 	}
-	client.WebhookLogs = client.Logs
+	client.WebhookLogs = client.Deliveries
 
 	return client, nil
 }

@@ -16,10 +16,12 @@ const (
 var Routes = RouteRegistry{
 	APIKeys:     APIKeyRoutes{},
 	Contacts:    ContactRoutes{},
+	Deliveries:  DeliveryRoutes{},
 	Logs:        LogRoutes{},
 	Messages:    MessageRoutes{},
 	OTP:         OTPRoutes{},
 	Segments:    SegmentRoutes{Contacts: SegmentContactRoutes{}},
+	Tags:        TagRoutes{},
 	Templates:   TemplateRoutes{},
 	WebhookLogs: WebhookLogRoutes{},
 	Webhooks:    WebhookRoutes{},
@@ -29,236 +31,284 @@ var Routes = RouteRegistry{
 type RouteRegistry struct {
 	APIKeys     APIKeyRoutes
 	Contacts    ContactRoutes
+	Deliveries  DeliveryRoutes
 	Logs        LogRoutes
 	Messages    MessageRoutes
 	OTP         OTPRoutes
 	Segments    SegmentRoutes
+	Tags        TagRoutes
 	Templates   TemplateRoutes
 	WebhookLogs WebhookLogRoutes
 	Webhooks    WebhookRoutes
 }
 
-// APIKeyRoutes builds public API key endpoints.
 type APIKeyRoutes struct{}
-
-// ContactRoutes builds contact endpoints.
 type ContactRoutes struct{}
-
-// LogRoutes builds log endpoints.
+type DeliveryRoutes struct{}
 type LogRoutes struct{}
-
-// MessageRoutes builds message endpoints.
 type MessageRoutes struct{}
-
-// OTPRoutes builds OTP endpoints.
 type OTPRoutes struct{}
-
-// SegmentRoutes builds segment endpoints.
 type SegmentRoutes struct {
 	Contacts SegmentContactRoutes
 }
-
-// SegmentContactRoutes builds nested segment contact endpoints.
 type SegmentContactRoutes struct{}
-
-// TemplateRoutes builds template endpoints.
+type TagRoutes struct{}
 type TemplateRoutes struct{}
-
-// WebhookLogRoutes builds webhook log endpoints.
 type WebhookLogRoutes struct{}
-
-// WebhookRoutes builds webhook endpoints.
 type WebhookRoutes struct{}
 
-// Delete returns DELETE /api-keys/:apiKeyId.
-func (APIKeyRoutes) Delete(apiKeyID string) string {
-	return fmt.Sprintf("/api-keys/%s", apiKeyID)
+func (APIKeyRoutes) List(options *RESTGetListAPIKeysQueryParams) string {
+	return appendQuery("/api-keys", createCursorQuery((*RESTCursorOptions)(options)))
 }
 
-// Get returns GET /logs/:logId.
-func (LogRoutes) Get(logID string) string {
-	return fmt.Sprintf("/logs/%s", logID)
+func (APIKeyRoutes) Create() string {
+	return "/api-keys"
 }
 
-// Send returns POST /messages.
-func (MessageRoutes) Send() string {
-	return "/messages"
+func (APIKeyRoutes) Sweep() string {
+	return "/api-keys"
 }
 
-// Create is a compatibility alias for Send.
-func (r MessageRoutes) Create() string {
-	return r.Send()
+func (APIKeyRoutes) Get(id string) string {
+	return fmt.Sprintf("/api-keys/%s", id)
 }
 
-// Batch returns POST /messages/batch.
-func (MessageRoutes) Batch() string {
-	return "/messages/batch"
+func (APIKeyRoutes) Update(id string) string {
+	return fmt.Sprintf("/api-keys/%s", id)
 }
 
-// Cancel returns POST /messages/:messageId/cancel.
-func (MessageRoutes) Cancel(messageID string) string {
-	return fmt.Sprintf("/messages/%s/cancel", messageID)
+func (APIKeyRoutes) Delete(id string) string {
+	return fmt.Sprintf("/api-keys/%s", id)
 }
 
-// Get returns GET /messages/:messageId.
-func (MessageRoutes) Get(messageID string) string {
-	return fmt.Sprintf("/messages/%s", messageID)
+func (APIKeyRoutes) Logs(id string, options *RESTGetListAPIKeyLogsQueryParams) string {
+	return appendQuery(fmt.Sprintf("/api-keys/%s/logs", id), createLogsListQuery(options))
 }
 
-// List returns GET /messages with cursor and filter query params.
-func (MessageRoutes) List(options *RESTGetListMessagesQueryParams) string {
-	return appendQuery("/messages", createMessagesListQuery(options))
-}
-
-// Send returns POST /otp.
-func (OTPRoutes) Send() string {
-	return "/otp"
-}
-
-// Create is a compatibility alias for Send.
-func (r OTPRoutes) Create() string {
-	return r.Send()
-}
-
-// Verify returns POST /otp/:otpId/verify.
-func (OTPRoutes) Verify(otpID string) string {
-	return fmt.Sprintf("/otp/%s/verify", otpID)
-}
-
-// List returns GET /contacts with cursor query params.
 func (ContactRoutes) List(options *RESTGetListContactsQueryParams) string {
 	return appendQuery("/contacts", createCursorQuery((*RESTCursorOptions)(options)))
 }
 
-// Create returns POST /contacts.
 func (ContactRoutes) Create() string {
 	return "/contacts"
 }
 
-// Get returns GET /contacts/:identifier.
+func (ContactRoutes) Sweep() string {
+	return "/contacts"
+}
+
+func (ContactRoutes) Batch() string {
+	return "/contacts/batch"
+}
+
 func (ContactRoutes) Get(identifier string) string {
 	return fmt.Sprintf("/contacts/%s", identifier)
 }
 
-// Update returns PATCH /contacts/:id.
 func (ContactRoutes) Update(id string) string {
 	return fmt.Sprintf("/contacts/%s", id)
 }
 
-// Delete returns DELETE /contacts/:id.
 func (ContactRoutes) Delete(id string) string {
 	return fmt.Sprintf("/contacts/%s", id)
 }
 
-// List returns GET /segments with cursor query params.
+func (ContactRoutes) AddTags(id string) string {
+	return fmt.Sprintf("/contacts/%s/tags", id)
+}
+
+func (ContactRoutes) RemoveTags(id string) string {
+	return fmt.Sprintf("/contacts/%s/tags", id)
+}
+
+func (DeliveryRoutes) List(options *RESTGetListDeliveriesQueryParams) string {
+	return appendQuery("/deliveries", createDeliveriesListQuery(options))
+}
+
+func (DeliveryRoutes) Get(id string) string {
+	return fmt.Sprintf("/deliveries/%s", id)
+}
+
+func (DeliveryRoutes) ByWebhook(id string, options *RESTGetListWebhookDeliveriesQueryParams) string {
+	return Routes.Webhooks.Deliveries(id, options)
+}
+
+func (LogRoutes) List(options *RESTGetListLogsQueryParams) string {
+	return appendQuery("/logs", createLogsListQuery(options))
+}
+
+func (LogRoutes) Get(id string) string {
+	return fmt.Sprintf("/logs/%s", id)
+}
+
+func (MessageRoutes) Send() string {
+	return "/messages"
+}
+
+func (r MessageRoutes) Create() string {
+	return r.Send()
+}
+
+func (MessageRoutes) Batch() string {
+	return "/messages/batch"
+}
+
+func (MessageRoutes) Cancel(id string) string {
+	return fmt.Sprintf("/messages/%s/cancel", id)
+}
+
+func (MessageRoutes) Get(id string) string {
+	return fmt.Sprintf("/messages/%s", id)
+}
+
+func (MessageRoutes) List(options *RESTGetListMessagesQueryParams) string {
+	return appendQuery("/messages", createMessagesListQuery(options))
+}
+
+func (OTPRoutes) Send() string {
+	return "/otp"
+}
+
+func (r OTPRoutes) Create() string {
+	return r.Send()
+}
+
+func (OTPRoutes) Verify(id string) string {
+	return fmt.Sprintf("/otp/%s/verify", id)
+}
+
 func (SegmentRoutes) List(options *RESTGetListSegmentsQueryParams) string {
 	return appendQuery("/segments", createCursorQuery((*RESTCursorOptions)(options)))
 }
 
-// Create returns POST /segments.
 func (SegmentRoutes) Create() string {
 	return "/segments"
 }
 
-// Get returns GET /segments/:id.
+func (SegmentRoutes) Sweep() string {
+	return "/segments"
+}
+
 func (SegmentRoutes) Get(id string) string {
 	return fmt.Sprintf("/segments/%s", id)
 }
 
-// Update returns PATCH /segments/:id.
 func (SegmentRoutes) Update(id string) string {
 	return fmt.Sprintf("/segments/%s", id)
 }
 
-// Delete returns DELETE /segments/:id.
 func (SegmentRoutes) Delete(id string) string {
 	return fmt.Sprintf("/segments/%s", id)
 }
 
-// List returns GET /segments/:id/contacts with cursor query params.
 func (SegmentContactRoutes) List(id string, options *RESTGetListSegmentContactsQueryParams) string {
-	return appendQuery(
-		fmt.Sprintf("/segments/%s/contacts", id),
-		createCursorQuery((*RESTCursorOptions)(options)),
-	)
+	return appendQuery(fmt.Sprintf("/segments/%s/contacts", id), createCursorQuery((*RESTCursorOptions)(options)))
 }
 
-// Attach returns POST /segments/:id/contacts.
 func (SegmentContactRoutes) Attach(id string) string {
 	return fmt.Sprintf("/segments/%s/contacts", id)
 }
 
-// Detach returns DELETE /segments/:id/contacts/:contactId.
+func (SegmentContactRoutes) AttachMany(id string) string {
+	return fmt.Sprintf("/segments/%s/contacts/attach", id)
+}
+
+func (SegmentContactRoutes) DetachMany(id string) string {
+	return fmt.Sprintf("/segments/%s/contacts/detach", id)
+}
+
 func (SegmentContactRoutes) Detach(id, contactID string) string {
 	return fmt.Sprintf("/segments/%s/contacts/%s", id, contactID)
 }
 
-// List returns GET /templates with cursor query and optional i18n expansion.
+func (TagRoutes) List() string {
+	return "/tags"
+}
+
+func (TagRoutes) Create() string {
+	return "/tags"
+}
+
+func (TagRoutes) Get(id string) string {
+	return fmt.Sprintf("/tags/%s", id)
+}
+
+func (TagRoutes) Update(id string) string {
+	return fmt.Sprintf("/tags/%s", id)
+}
+
+func (TagRoutes) Delete(id string) string {
+	return fmt.Sprintf("/tags/%s", id)
+}
+
 func (TemplateRoutes) List(options *RESTGetListTemplatesQueryParams) string {
 	return appendQuery("/templates", createTemplatesListQuery(options))
 }
 
-// Create returns POST /templates.
 func (TemplateRoutes) Create() string {
 	return "/templates"
 }
 
-// Update returns PATCH /templates/:templateId.
-func (TemplateRoutes) Update(templateID string) string {
-	return fmt.Sprintf("/templates/%s", templateID)
+func (TemplateRoutes) Sweep() string {
+	return "/templates"
 }
 
-// Delete returns DELETE /templates/:templateId.
-func (TemplateRoutes) Delete(templateID string) string {
-	return fmt.Sprintf("/templates/%s", templateID)
+func (TemplateRoutes) Update(id string) string {
+	return fmt.Sprintf("/templates/%s", id)
 }
 
-// Get returns GET /templates/:identifier with optional query params.
+func (TemplateRoutes) Delete(id string) string {
+	return fmt.Sprintf("/templates/%s", id)
+}
+
+func (TemplateRoutes) Duplicate(id string) string {
+	return fmt.Sprintf("/templates/%s/duplicate", id)
+}
+
 func (TemplateRoutes) Get(identifier string, options ...*RESTGetTemplateQueryParams) string {
-	query := createTemplateGetQuery(firstTemplateQueryOptions(options))
-	return appendQuery(fmt.Sprintf("/templates/%s", identifier), query)
+	return appendQuery(fmt.Sprintf("/templates/%s", identifier), createTemplateGetQuery(firstTemplateQueryOptions(options)))
 }
 
-// List returns GET /webhooks with cursor query.
 func (WebhookRoutes) List(options *RESTGetListWebhooksQueryParams) string {
-	return appendQuery("/webhooks", createCursorQuery(options))
+	return appendQuery("/webhooks", createCursorQuery((*RESTCursorOptions)(options)))
 }
 
-// Create returns POST /webhooks.
 func (WebhookRoutes) Create() string {
 	return "/webhooks"
 }
 
-// Update returns PATCH /webhooks/:webhookId.
-func (WebhookRoutes) Update(webhookID string) string {
-	return fmt.Sprintf("/webhooks/%s", webhookID)
+func (WebhookRoutes) Sweep() string {
+	return "/webhooks"
 }
 
-// Delete returns DELETE /webhooks/:webhookId.
-func (WebhookRoutes) Delete(webhookID string) string {
-	return fmt.Sprintf("/webhooks/%s", webhookID)
+func (WebhookRoutes) Update(id string) string {
+	return fmt.Sprintf("/webhooks/%s", id)
 }
 
-// Get returns GET /webhooks/:webhookId.
-func (WebhookRoutes) Get(webhookID string) string {
-	return fmt.Sprintf("/webhooks/%s", webhookID)
+func (WebhookRoutes) Delete(id string) string {
+	return fmt.Sprintf("/webhooks/%s", id)
 }
 
-// Logs returns GET /webhooks/:id/logs with cursor query and filters.
-func (WebhookRoutes) Logs(webhookID string, options *RESTGetListWebhookLogsQueryParams) string {
-	return appendQuery(fmt.Sprintf("/webhooks/%s/logs", webhookID), createWebhookLogsListQuery(options))
+func (WebhookRoutes) Get(id string) string {
+	return fmt.Sprintf("/webhooks/%s", id)
 }
 
-// List is a compatibility alias for Routes.Webhooks.Logs.
-func (WebhookLogRoutes) List(webhookID string, options *RESTGetListWebhookLogsQueryParams) string {
-	return Routes.Webhooks.Logs(webhookID, options)
+func (WebhookRoutes) Deliveries(id string, options *RESTGetListWebhookDeliveriesQueryParams) string {
+	return appendQuery(fmt.Sprintf("/webhooks/%s/deliveries", id), createWebhookDeliveriesListQuery(options))
+}
+
+func (r WebhookRoutes) Logs(id string, options *RESTGetListWebhookLogsQueryParams) string {
+	return r.Deliveries(id, (*RESTGetListWebhookDeliveriesQueryParams)(options))
+}
+
+func (WebhookLogRoutes) List(id string, options *RESTGetListWebhookLogsQueryParams) string {
+	return Routes.Webhooks.Logs(id, options)
 }
 
 func appendQuery(route, query string) string {
 	if query == "" {
 		return route
 	}
-
 	return route + "?" + query
 }
 
@@ -288,8 +338,10 @@ func createTemplatesListQuery(options *RESTGetListTemplatesQueryParams) string {
 	}
 
 	parts := []string{createCursorQuery(&cursor)}
-	if withI18n := options.withI18n(); withI18n != nil {
-		parts = append(parts, "withi18n="+url.QueryEscape(strconv.FormatBool(*withI18n)))
+	if options != nil {
+		if withI18n := options.withI18n(); withI18n != nil {
+			parts = append(parts, "withi18n="+url.QueryEscape(strconv.FormatBool(*withI18n)))
+		}
 	}
 
 	return strings.Join(parts, "&")
@@ -322,12 +374,65 @@ func createMessagesListQuery(options *RESTGetListMessagesQueryParams) string {
 		if options.Country != "" {
 			parts = append(parts, "country="+url.QueryEscape(string(options.Country)))
 		}
+		if options.Encoding != "" {
+			parts = append(parts, "encoding="+url.QueryEscape(string(options.Encoding)))
+		}
+		if options.Scheduled != nil {
+			parts = append(parts, "scheduled="+url.QueryEscape(strconv.FormatBool(*options.Scheduled)))
+		}
+		if options.WithCounts != nil {
+			parts = append(parts, "withCounts="+url.QueryEscape(strconv.FormatBool(*options.WithCounts)))
+		}
 	}
 
 	return strings.Join(parts, "&")
 }
 
-func createWebhookLogsListQuery(options *RESTGetListWebhookLogsQueryParams) string {
+func createLogsListQuery(options *RESTGetListLogsQueryParams) string {
+	cursor := RESTCursorOptions{}
+	if options != nil {
+		cursor = options.RESTCursorOptions
+	}
+
+	parts := []string{createCursorQuery(&cursor)}
+	if options != nil {
+		if options.Code > 0 {
+			parts = append(parts, "code="+url.QueryEscape(strconv.Itoa(options.Code)))
+		}
+		if options.Method != "" {
+			parts = append(parts, "method="+url.QueryEscape(options.Method))
+		}
+		if options.Endpoint != "" {
+			parts = append(parts, "endpoint="+url.QueryEscape(options.Endpoint))
+		}
+	}
+
+	return strings.Join(parts, "&")
+}
+
+func createDeliveriesListQuery(options *RESTGetListDeliveriesQueryParams) string {
+	cursor := RESTCursorOptions{}
+	if options != nil {
+		cursor = options.RESTCursorOptions
+	}
+
+	parts := []string{createCursorQuery(&cursor)}
+	if options != nil {
+		if options.WebhookID != "" {
+			parts = append(parts, "webhookId="+url.QueryEscape(string(options.WebhookID)))
+		}
+		if options.MessageID != "" {
+			parts = append(parts, "messageId="+url.QueryEscape(string(options.MessageID)))
+		}
+		if options.Type != "" {
+			parts = append(parts, "type="+url.QueryEscape(string(options.Type)))
+		}
+	}
+
+	return strings.Join(parts, "&")
+}
+
+func createWebhookDeliveriesListQuery(options *RESTGetListWebhookDeliveriesQueryParams) string {
 	cursor := RESTCursorOptions{}
 	if options != nil {
 		cursor = options.RESTCursorOptions
@@ -341,6 +446,15 @@ func createWebhookLogsListQuery(options *RESTGetListWebhookLogsQueryParams) stri
 		if options.Status != "" {
 			parts = append(parts, "status="+url.QueryEscape(string(options.Status)))
 		}
+		if options.Code > 0 {
+			parts = append(parts, "code="+url.QueryEscape(strconv.Itoa(options.Code)))
+		}
+		if options.Attempt > 0 {
+			parts = append(parts, "attempt="+url.QueryEscape(strconv.Itoa(options.Attempt)))
+		}
+		if options.MessageID != "" {
+			parts = append(parts, "messageId="+url.QueryEscape(string(options.MessageID)))
+		}
 	}
 
 	return strings.Join(parts, "&")
@@ -350,6 +464,5 @@ func firstTemplateQueryOptions(options []*RESTGetTemplateQueryParams) *RESTGetTe
 	if len(options) == 0 {
 		return nil
 	}
-
 	return options[0]
 }

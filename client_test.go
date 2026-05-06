@@ -109,7 +109,7 @@ func TestRoutesMatchPublicAPI(t *testing.T) {
 	if route := Routes.Templates.Get("abc", &RESTGetTemplateQueryParams{WithI18n: &withI18n}); route != "/templates/abc?withi18n=true" {
 		t.Fatalf("unexpected template get route with withi18n: %s", route)
 	}
-	if route := Routes.Webhooks.Logs("abc", nil); route != "/webhooks/abc/logs?limit=15" {
+	if route := Routes.Webhooks.Logs("abc", nil); route != "/webhooks/abc/deliveries?limit=15" {
 		t.Fatalf("unexpected webhook logs route: %s", route)
 	}
 	if route := Routes.Webhooks.Get("abc"); route != "/webhooks/abc" {
@@ -144,8 +144,8 @@ func TestTemplatesCreateDoesNotSendHiddenFields(t *testing.T) {
 		Variables: []APITemplateVariable{
 			{Name: "name", Fallback: "customer"},
 		},
-		Tags: []APITemplateTag{
-			{Name: "category", Value: "welcome"},
+		Tags: map[string]any{
+			"category": "welcome",
 		},
 	})
 	if err != nil {
@@ -234,8 +234,8 @@ func TestTemplatesUpdateUsesCurrentContract(t *testing.T) {
 		Variables: []APITemplateVariable{
 			{Name: "name", Fallback: "friend"},
 		},
-		Tags: []APITemplateTag{
-			{Name: "category", Value: "transactional"},
+		Tags: map[string]any{
+			"category": "transactional",
 		},
 	})
 	if err != nil {
@@ -261,7 +261,7 @@ func TestTemplatesGetSupportsQueryOptions(t *testing.T) {
 		requestPath = r.URL.Path
 		requestQuery = r.URL.RawQuery
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"ok":true,"data":{"id":"1","name":"welcome","content":"Hello {{name}}","description":"Welcome copy","variables":[{"name":"name","fallback":"friend"}],"tags":[{"name":"category","value":"welcome"}],"createdAt":"2026-02-19T20:01:09.000Z"}}`))
+		_, _ = w.Write([]byte(`{"ok":true,"data":{"id":"1","name":"welcome","content":"Hello {{name}}","description":"Welcome copy","variables":[{"name":"name","fallback":"friend"}],"tags":{"category":"welcome"},"createdAt":"2026-02-19T20:01:09.000Z"}}`))
 	}))
 	defer server.Close()
 
@@ -293,7 +293,7 @@ func TestMessagesSendSendsIdempotencyKey(t *testing.T) {
 		idempotencyKey = r.Header.Get("Idempotency-Key")
 		requestPath = r.URL.Path
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"ok":true,"data":{"id":"1","createdAt":"2026-02-19T20:01:09.000Z","analysis":{"characters":5,"encoding":"gsm7","segments":{"concat":153,"count":1,"reason":"fits","single":160}}}}`))
+		_, _ = w.Write([]byte(`{"ok":true,"data":{"id":"1","createdAt":"2026-02-19T20:01:09.000Z","sandbox":false,"analysis":{"characters":5,"encoding":"gsm7","segments":{"concat":153,"count":1,"reason":"fits","single":160}}}}`))
 	}))
 	defer server.Close()
 
@@ -360,7 +360,7 @@ func TestMessagesGetUsesNodeRouteBuilder(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestPath = r.URL.Path
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"ok":true,"data":{"id":"1","createdAt":"2026-02-19T20:01:09.000Z","to":"+5511999999999","type":"SMS","tags":[],"status":"SENT","country":"br","content":"hello","encoding":"GMS7","isPayAsYouGo":false}}`))
+		_, _ = w.Write([]byte(`{"ok":true,"data":{"id":"1","createdAt":"2026-02-19T20:01:09.000Z","contact":null,"contactId":null,"to":"+5511999999999","from":null,"type":"SMS","tags":{},"status":"SENT","country":"br","content":"hello","encoding":"GSM7","templateId":null,"deliveredAt":null,"scheduledAt":null,"sandbox":false}}`))
 	}))
 	defer server.Close()
 
@@ -384,7 +384,7 @@ func TestMessagesSendOmitsEmptyIdempotencyKey(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		idempotencyKey = r.Header.Get("Idempotency-Key")
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"ok":true,"data":{"id":"1","createdAt":"2026-02-19T20:01:09.000Z","analysis":{"characters":5,"encoding":"gsm7","segments":{"concat":153,"count":1,"reason":"fits","single":160}}}}`))
+		_, _ = w.Write([]byte(`{"ok":true,"data":{"id":"1","createdAt":"2026-02-19T20:01:09.000Z","sandbox":false,"analysis":{"characters":5,"encoding":"gsm7","segments":{"concat":153,"count":1,"reason":"fits","single":160}}}}`))
 	}))
 	defer server.Close()
 

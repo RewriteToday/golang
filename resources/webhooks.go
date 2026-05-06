@@ -21,14 +21,12 @@ type WebhookManager struct {
 // Webhooks is kept as a compatibility alias for WebhookManager.
 type Webhooks = WebhookManager
 
-// VerifyWebhookOptions carries the raw payload and headers used to validate Rewrite webhook deliveries.
 type VerifyWebhookOptions struct {
 	Secret  string
 	Payload string
 	Headers map[string]string
 }
 
-// Verify checks whether the webhook request was signed by Rewrite.
 func (r *WebhookManager) Verify(options VerifyWebhookOptions) (bool, error) {
 	secret := options.Secret
 	if secret == "" {
@@ -78,35 +76,36 @@ func (r *WebhookManager) Verify(options VerifyWebhookOptions) (bool, error) {
 	return subtle.ConstantTimeCompare([]byte(signature), []byte(expected)) == 1, nil
 }
 
-// Create creates a webhook.
 func (r *WebhookManager) Create(ctx context.Context, body api.RESTPostCreateWebhookBody) (api.RESTPostCreateWebhookData, error) {
 	var out api.RESTPostCreateWebhookData
 	err := r.Rest.Post(ctx, api.Routes.Webhooks.Create(), body, &out, nil)
 	return out, err
 }
 
-// Update updates a webhook by ID.
 func (r *WebhookManager) Update(ctx context.Context, id string, body api.RESTPatchUpdateWebhookBody) (api.RESTPatchUpdateWebhookData, error) {
 	var out api.RESTPatchUpdateWebhookData
 	err := r.Rest.Patch(ctx, api.Routes.Webhooks.Update(id), body, &out, nil)
 	return out, err
 }
 
-// Delete deletes a webhook by ID.
 func (r *WebhookManager) Delete(ctx context.Context, id string) (api.RESTDeleteWebhookData, error) {
 	var out api.RESTDeleteWebhookData
 	err := r.Rest.Delete(ctx, api.Routes.Webhooks.Delete(id), &out, nil)
 	return out, err
 }
 
-// List lists webhooks.
+func (r *WebhookManager) Sweep(ctx context.Context, body api.RESTDeleteWebhooksBody) (api.RESTDeleteWebhooksData, error) {
+	var out api.RESTDeleteWebhooksData
+	err := r.Rest.DeleteWithBody(ctx, api.Routes.Webhooks.Sweep(), body, &out, nil)
+	return out, err
+}
+
 func (r *WebhookManager) List(ctx context.Context, query *api.RESTGetListWebhooksQueryParams) (api.RESTGetListWebhooksData, error) {
 	var out api.RESTGetListWebhooksData
 	err := r.Rest.Get(ctx, api.Routes.Webhooks.List(query), &out, nil)
 	return out, err
 }
 
-// Get fetches a webhook by ID.
 func (r *WebhookManager) Get(ctx context.Context, id string) (api.RESTGetWebhookData, error) {
 	var out api.RESTGetWebhookData
 	err := r.Rest.Get(ctx, api.Routes.Webhooks.Get(id), &out, nil)
@@ -119,7 +118,6 @@ func headerValue(headers map[string]string, key string) string {
 			return value
 		}
 	}
-
 	return ""
 }
 

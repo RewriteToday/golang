@@ -6,7 +6,7 @@ import (
 	"github.com/rewritetoday/golang/api"
 )
 
-// LogManager provides webhook delivery log operations.
+// LogManager provides request-log operations.
 type LogManager struct {
 	Base
 }
@@ -14,16 +14,14 @@ type LogManager struct {
 // Logs is kept as a compatibility alias for LogManager.
 type Logs = LogManager
 
-// List lists delivery logs for a webhook.
-func (r *LogManager) List(ctx context.Context, webhookID string, query *api.RESTGetListWebhookLogsQueryParams) (api.RESTGetListWebhookLogsData, error) {
-	var out api.RESTGetListWebhookLogsData
-	err := r.Rest.Get(ctx, api.Routes.Webhooks.Logs(webhookID, query), &out, nil)
+func (r *LogManager) List(ctx context.Context, query *api.RESTGetListLogsQueryParams) (api.RESTGetListLogsData, error) {
+	var out api.RESTGetListLogsData
+	err := r.Rest.Get(ctx, api.Routes.Logs.List(query), &out, nil)
 	return out, err
 }
 
-// Get fetches a webhook delivery log by ID.
-func (r *LogManager) Get(ctx context.Context, id string) (api.RESTGetWebhookLogData, error) {
-	var out api.RESTGetWebhookLogData
+func (r *LogManager) Get(ctx context.Context, id string) (api.RESTGetLogData, error) {
+	var out api.RESTGetLogData
 	err := r.Rest.Get(ctx, api.Routes.Logs.Get(id), &out, nil)
 	return out, err
 }
